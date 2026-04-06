@@ -1,0 +1,46 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad" x1="220" y1="620" x2="804" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="0.5" stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#E9D5FF"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="10" result="blur1"/>
+      <feColorMatrix in="blur1" type="matrix" values="1 0 0 0 0.49  0 1 0 0 0.23  0 0 1 0 0.93  0 0 0 1 0" result="colorGlow"/>
+      <feMerge>
+        <feMergeNode in="colorGlow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softFloor" x="0" y="0" width="1024" height="1024">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="#050507"/>
+
+  <!-- subtle floor glow -->
+  <ellipse cx="512" cy="595" rx="175" ry="24" fill="#6D28D9" opacity="0.55" filter="url(#softFloor)"/>
+  <ellipse cx="512" cy="603" rx="120" ry="12" fill="#A855F7" opacity="0.35" filter="url(#softFloor)"/>
+
+  <g filter="url(#glow)" stroke="url(#grad)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round">
+    <!-- left bracket -->
+    <path d="M212 540L308 483"/>
+    <path d="M212 540L308 597"/>
+
+    <!-- G -->
+    <path d="M491 456H378C346 456 320 482 320 514V566C320 598 346 624 378 624H466C492 624 512 604 512 578V565H423"/>
+
+    <!-- A -->
+    <path d="M555 624L635 456L715 624"/>
+    <path d="M586 566H684"/>
+
+    <!-- slash -->
+    <path d="M733 629L784 451"/>
+
+    <!-- right bracket -->
+    <path d="M815 483L910 540"/>
+    <path d="M815 597L910 540"/>
+  </g>
+</svg>
