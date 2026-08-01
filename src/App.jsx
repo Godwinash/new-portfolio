@@ -1615,7 +1615,7 @@ export default function App() {
 
                         <div className="grid gap-4">
                           {[
-                            ["Email", "ashiekagodwin1@gmail.com", "mailto:ashiekagodwin1@gmail.com"],
+                            ["Email", "ashiekaagodwin1@gmail.com", "mailto:ashiekaagodwin1@gmail.com"],
                             ["GitHub", "github.com/Godwinash", "https://github.com/Godwinash"],
                             ["Location", "Nigeria", null],
                           ].map(([title, text, link]) => (
