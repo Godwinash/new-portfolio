@@ -15,7 +15,7 @@ function GlassCard({ theme, className = "", children }) {
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[2rem] border backdrop-blur-2xl",
+        "relative overflow-hidden rounded-[2rem] border backdrop-blur-xl",
         theme === "light"
           ? "border-white/60 bg-white/28 shadow-[0_18px_50px_rgba(59,130,246,0.10)]"
           : "border-white/15 bg-white/10 shadow-[0_18px_50px_rgba(0,0,0,0.28)]",
@@ -316,8 +316,18 @@ function Loader({ theme, onDone }) {
 
 function BubbleField({ theme }) {
   const [phase, setPhase] = useState("burst");
+  const [reducedMotion, setReducedMotion] = useState(false);
 
   useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReducedMotion(mq.matches);
+    const handler = (e) => setReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    if (reducedMotion) return;
     let timeoutId;
 
     const runCycle = () => {
@@ -331,28 +341,23 @@ function BubbleField({ theme }) {
     runCycle();
 
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [reducedMotion]);
 
   const bubbles = useMemo(
     () =>
-      Array.from({ length: 42 }, (_, i) => {
-        const sizeMap = [
-          285, 255, 230, 205,
-          180, 165, 150, 138,
-          124, 116, 108, 100, 92, 84, 76, 68,
-          58, 50, 42, 34,
-        ];
+      Array.from({ length: 18 }, (_, i) => {
+        const sizeMap = [260, 220, 190, 160, 140, 120, 100, 84, 68];
 
         const size = sizeMap[i % sizeMap.length];
-        const isLarge = size >= 205;
-        const isMedium = size >= 124 && size < 205;
-        const isSmall = size < 124;
+        const isLarge = size >= 190;
+        const isMedium = size >= 100 && size < 190;
+        const isSmall = size < 100;
 
         return {
           id: i,
           size,
-          left: `${(i * 7 + 3) % 100}%`,
-          leftAlt: `${(i * 11 + 17) % 100}%`,
+          left: `${(i * 15 + 3) % 100}%`,
+          leftAlt: `${(i * 19 + 17) % 100}%`,
           burstDuration: isLarge
             ? 11 + (i % 3)
             : isMedium
@@ -368,7 +373,7 @@ function BubbleField({ theme }) {
           driftB: (i % 2 === 0 ? -1 : 1) * (5 + (i % 5) * 3),
           wobble: 3 + (i % 4) * 2,
           opacity: isLarge ? 0.34 : isMedium ? 0.28 : 0.22,
-          blur: isLarge ? 0 : isMedium ? 1 : i % 3 === 0 ? 2 : 0,
+          blur: isLarge ? 0 : isMedium ? 1 : 0,
           bottomStart: -18 - (i % 8) * 8,
           showInCalm:
             isLarge ? i % 2 === 0 : isMedium ? i % 3 !== 0 : i % 4 === 0,
@@ -377,6 +382,10 @@ function BubbleField({ theme }) {
       }),
     []
   );
+
+  if (reducedMotion) {
+    return null;
+  }
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -409,7 +418,7 @@ function BubbleField({ theme }) {
         return (
           <motion.div
             key={bubble.id}
-            className="absolute rounded-full"
+            className="absolute rounded-full will-change-transform"
             initial={false}
             animate={{
               y: animateY,
@@ -430,7 +439,7 @@ function BubbleField({ theme }) {
               width: bubble.size,
               height: bubble.size,
               bottom: `${bubble.bottomStart}%`,
-              filter: `blur(${bubble.blur}px)`,
+              filter: bubble.blur ? `blur(${bubble.blur}px)` : undefined,
               background:
                 theme === "light"
                   ? "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.96), rgba(219,234,254,0.52) 24%, rgba(96,165,250,0.24) 48%, rgba(168,85,247,0.14) 72%, rgba(255,255,255,0.04) 100%)"
@@ -546,6 +555,13 @@ export default function App() {
   const [theme, setTheme] = useState(getThemeByHour(new Date().getHours()));
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState("home");
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTheme(getThemeByHour(new Date().getHours()));
+    }, 60 * 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const sectionIds = ["home", "about", "projects", "skills", "contact"];
@@ -1147,6 +1163,8 @@ export default function App() {
               <div className="flex flex-wrap gap-3 pt-1">
                 <a
                   href="https://frontend-assessment-godwin.vercel.app"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={cn(
                     "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
                     theme === "light"
@@ -1158,6 +1176,8 @@ export default function App() {
                 </a>
                 <a
                   href="https://github.com/Godwinash/frontend-assessment-godwin"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={cn(
                     "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
                     theme === "light"
@@ -1234,6 +1254,8 @@ export default function App() {
               <div className="flex flex-wrap gap-3 pt-1">
                 <a
                   href="https://godwinash.github.io/travel_agency_demo"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={cn(
                     "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
                     theme === "light"
@@ -1245,6 +1267,8 @@ export default function App() {
                 </a>
                 <a
                   href="https://github.com/Godwinash/travel-agency-demo"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={cn(
                     "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
                     theme === "light"
@@ -1320,6 +1344,8 @@ export default function App() {
               <div className="flex flex-wrap gap-3 pt-1">
                 <a
                   href="https://godwinash.github.io/yum-demo"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={cn(
                     "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
                     theme === "light"
@@ -1331,6 +1357,8 @@ export default function App() {
                 </a>
                 <a
                   href="https://github.com/Godwinash/yum-demo"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className={cn(
                     "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
                     theme === "light"
@@ -1480,6 +1508,7 @@ export default function App() {
                               id="name"
                               name="name"
                               type="text"
+                              required
                               placeholder="Your name"
                               className={cn(
                                 "w-full rounded-[1.3rem] border px-4 py-3 text-sm outline-none backdrop-blur-xl transition duration-300",
@@ -1501,6 +1530,7 @@ export default function App() {
                               id="email"
                               name="email"
                               type="email"
+                              required
                               placeholder="you@example.com"
                               className={cn(
                                 "w-full rounded-[1.3rem] border px-4 py-3 text-sm outline-none backdrop-blur-xl transition duration-300",
@@ -1523,6 +1553,7 @@ export default function App() {
                             id="message"
                             name="message"
                             rows="6"
+                            required
                             placeholder="Tell me a bit about your project or idea..."
                             className={cn(
                               "w-full resize-none rounded-[1.5rem] border px-4 py-4 text-sm outline-none backdrop-blur-xl transition duration-300",
@@ -1584,10 +1615,10 @@ export default function App() {
 
                         <div className="grid gap-4">
                           {[
-                            ["Email", "ashiekagodwin1@gmail.com"],
-                            ["GitHub", "github.com/GodwinAsh"],
-                            ["Location", "Nigeria"],
-                          ].map(([title, text]) => (
+                            ["Email", "ashiekagodwin1@gmail.com", "mailto:ashiekagodwin1@gmail.com"],
+                            ["GitHub", "github.com/Godwinash", "https://github.com/Godwinash"],
+                            ["Location", "Nigeria", null],
+                          ].map(([title, text, link]) => (
                             <motion.div
                               key={title}
                               whileHover={{ y: -3, scale: 1.01 }}
@@ -1600,7 +1631,18 @@ export default function App() {
                               <p className="text-[10px] uppercase tracking-[0.22em] opacity-65">
                                 {title}
                               </p>
-                              <p className="mt-2 text-sm leading-7 opacity-85">{text}</p>
+                              {link ? (
+                                <a
+                                  href={link}
+                                  target={link.startsWith("http") ? "_blank" : undefined}
+                                  rel={link.startsWith("http") ? "noopener noreferrer" : undefined}
+                                  className="mt-2 block text-sm leading-7 opacity-85 hover:opacity-100 hover:underline"
+                                >
+                                  {text}
+                                </a>
+                              ) : (
+                                <p className="mt-2 text-sm leading-7 opacity-85">{text}</p>
+                              )}
                             </motion.div>
                           ))}
                         </div>
