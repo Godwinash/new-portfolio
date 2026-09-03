@@ -1373,6 +1373,97 @@ export default function App() {
           </GlassCard>
         </motion.div>
       </StaggerItem>
+
+      <StaggerItem>
+        <motion.div
+          whileHover={{ y: -6, scale: 1.012 }}
+          transition={{ duration: 0.35, ease: sectionEase }}
+        >
+          <GlassCard theme={theme} className="group p-6">
+            <div className="space-y-5">
+              <div
+                className={cn(
+                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
+                  theme === "light"
+                    ? "border-white/65 bg-white/28"
+                    : "border-white/10 bg-white/6"
+                )}
+              >
+                <img
+                  src="/images/cilantro-kano.png"
+                  alt="Cilantro Kano Restaurant preview"
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
+
+                <div
+                  className={cn(
+                    "absolute inset-0",
+                    theme === "light" ? "bg-white/16" : "bg-black/20"
+                  )}
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
+
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div
+                    className={cn(
+                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
+                      theme === "light"
+                        ? "bg-white/48 text-slate-600"
+                        : "bg-white/10 text-slate-200"
+                    )}
+                  >
+                    Cilantro Kano Restaurant
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold">
+                  Cilantro Kano Restaurant
+                </h3>
+                <p className="text-sm leading-7 opacity-75">
+                  A modern, visually-driven restaurant website.
+                  It serves as a digital storefront to showcase the establishment's brand, atmosphere,
+                  and likely its menu or contact information.
+                </p>
+                <div className="text-sm opacity-60">
+                  React • TailwindCSS • Vite • JavaScript( with ESLint)
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-1">
+                <a
+                  href="https://cilantro-kano.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
+                    theme === "light"
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
+                  )}
+                >
+                  Live
+                </a>
+                <a
+                  href="https://github.com/Godwinash/cilantro-kano"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
+                    theme === "light"
+                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
+                      : "bg-white/8 text-slate-200 hover:bg-white/12"
+                  )}
+                >
+                  GitHub
+                </a>
+              </div>
+            </div>
+          </GlassCard>
+        </motion.div>
+      </StaggerItem>
     </StaggerGroup>
   </div>
 </section>
