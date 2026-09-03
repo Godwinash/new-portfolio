@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 function getThemeByHour(hour) {
   return hour >= 7 && hour < 19 ? "light" : "dark";
@@ -1764,6 +1765,7 @@ export default function App() {
           <Footer theme={theme} />
         </>
       )}
+      <SpeedInsights />
     </div>
   );
 }
