@@ -1428,7 +1428,7 @@ export default function App() {
                   and likely its menu or contact information.
                 </p>
                 <div className="text-sm opacity-60">
-                  React • TailwindCSS • Vite • JavaScript( with ESLint)
+                  React • TailwindCSS • Vite • JavaScript( with ESLint) • Vercel 
                 </div>
               </div>
 
@@ -1448,6 +1448,98 @@ export default function App() {
                 </a>
                 <a
                   href="https://github.com/Godwinash/cilantro-kano"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
+                    theme === "light"
+                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
+                      : "bg-white/8 text-slate-200 hover:bg-white/12"
+                  )}
+                >
+                  GitHub
+                </a>
+              </div>
+            </div>
+          </GlassCard>
+        </motion.div>
+      </StaggerItem>
+      
+      <StaggerItem>
+        <motion.div
+          whileHover={{ y: -6, scale: 1.012 }}
+          transition={{ duration: 0.35, ease: sectionEase }}
+        >
+          <GlassCard theme={theme} className="group p-6">
+            <div className="space-y-5">
+              <div
+                className={cn(
+                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
+                  theme === "light"
+                    ? "border-white/65 bg-white/28"
+                    : "border-white/10 bg-white/6"
+                )}
+              >
+                <img
+                  src="/images/lamisking.png"
+                  alt="Lamisking Pixiesalon and Spa preview"
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
+
+                <div
+                  className={cn(
+                    "absolute inset-0",
+                    theme === "light" ? "bg-white/16" : "bg-black/20"
+                  )}
+                />
+
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
+
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div
+                    className={cn(
+                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
+                      theme === "light"
+                        ? "bg-white/48 text-slate-600"
+                        : "bg-white/10 text-slate-200"
+                    )}
+                  >
+                    Lamisking Pixiesalon and Spa
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold">
+                  Lamisking Pixiesalon and Spa
+                </h3>
+                <p className="text-sm leading-7 opacity-75">
+                  Lamisking Pixiesalon and Spa opened in Wuse with a narrow focus:
+                  get one thing, the pixie cut, right more consistently than anyone else in Abuja.
+                  Everything else on the menu — braids, frontal installs, spa touches — grew out of
+                  clients asking for more of the same care applied elsewhere on their head.
+                </p>
+                <div className="text-sm opacity-60">
+                  NextJs • TailwindCSS • Typescript • Vercel  
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3 pt-1">
+                <a
+                  href="https://lamisking-pixiesalon.vercel.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(
+                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
+                    theme === "light"
+                      ? "bg-blue-500 text-white hover:bg-blue-600"
+                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
+                  )}
+                >
+                  Live
+                </a>
+                <a
+                  href="https://github.com/Godwinash/lamisking-pixiesalon"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={cn(
