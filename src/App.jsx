@@ -1283,7 +1283,7 @@ function ContactForm() {
     const form = event.currentTarget;
     setStatus("sending");
     try {
-      const res = await fetch(https://formspree.io/f/mdkaloln, {
+      const res = await fetch("https://formspree.io/f/mdkaloln", {
         method: "POST",
         body: new FormData(form),
         headers: { Accept: "application/json" },
