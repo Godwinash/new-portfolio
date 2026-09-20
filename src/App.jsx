@@ -1,33 +1,364 @@
-import { useEffect, useMemo, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { motion, useReducedMotion } from "framer-motion";
 
-function getThemeByHour(hour) {
-  return hour >= 7 && hour < 19 ? "light" : "dark";
+/* -------------------------------------------------------------------------- */
+/*  Constants and content                                                     */
+/* -------------------------------------------------------------------------- */
+
+const EASE = [0.22, 1, 0.36, 1];
+const FONT_STACK =
+  '"Outfit", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif';
+
+const RESUME_HREF = "/documents/Godwin-Ashiekaa.pdf";
+const FORMSPREE_URL = "https://formspree.io/f/mdkaloln";
+const EMAIL = "ashiekagodwin1@gmail.com";
+const GITHUB = "https://github.com/Godwinash";
+const LINKEDIN = "https://www.linkedin.com/in/godwin-ashiekaa-2a7aa9411";
+
+const NAV = [
+  { id: "home", label: "Home", short: "Home" },
+  { id: "about", label: "About", short: "About" },
+  { id: "experience", label: "Experience", short: "Career" },
+  { id: "projects", label: "Projects", short: "Work" },
+  { id: "skills", label: "Skills", short: "Stack" },
+  { id: "contact", label: "Contact", short: "Contact" },
+];
+
+const EXPERIENCE = [
+  {
+    role: "Lead Product Developer",
+    org: "African Data Strategist",
+    place: "Lagos, Nigeria (remote)",
+    period: "May 2026 to present",
+    points: [
+      "Selected to lead product development for an early-stage fintech and data company.",
+      "Designed and built the Forensic Probe Dashboard, an executive monitoring interface for spotting financial and data anomalies.",
+      "Worked on product architecture and frontend implementation for a data-security and operations product.",
+    ],
+  },
+  {
+    role: "SIWES Trainee",
+    org: "Megamore Wireless Broadband",
+    place: "Kano, Nigeria",
+    period: "Mar 2026 to May 2026",
+    points: [
+      "Industrial training in a broadband environment, with exposure to network systems and enterprise workflows.",
+      "Studied backend and infrastructure technologies while continuing independent engineering work.",
+    ],
+  },
+];
+
+const EDUCATION = {
+  degree: "B.Sc Information Technology",
+  school: "Bayero University Kano",
+  period: "2024 to 2027, in progress",
+  coursework: [
+    "Software Engineering",
+    "Systems Analysis and Design",
+    "Object-Oriented Programming",
+    "Data Structures and Algorithms",
+    "Net-Centric Computing",
+  ],
+};
+
+const FEATURED = [
+  {
+    id: "forensic-probe",
+    visual: "probe",
+    title: "Forensic Probe Dashboard",
+    badge: { label: "Client project", tone: "slate" },
+    note: "Built at African Data Strategist",
+    summary:
+      "An executive dashboard for monitoring high-velocity operational and financial data, built to surface anomalies and potential data or revenue leakage.",
+    highlights: [
+      "A real-time “Strike-Zone” indicator flags critical logic anomalies for immediate investigation.",
+      "Interactive visualizations and monitoring views designed for fast executive decisions.",
+      "High-contrast dark interface, structured to connect to more data sources and forensic workflows.",
+    ],
+    tags: ["Dashboard", "Data visualization", "Real-time monitoring", "Dark UI"],
+    links: [],
+  },
+  {
+    id: "cedar-ppsis",
+    visual: "school",
+    title: "Cedar Presidential Private School Management System",
+    badge: { label: "In progress", tone: "blue" },
+    note: "Architecture and database design complete",
+    summary:
+      "A school information system for a private school in Kano, covering admissions, academics, attendance, results, report cards, and online fee payment, with role-based access for the proprietor, principal, parents, and accountants. Designed to support 1,000+ students.",
+    highlights: [
+      "End-to-end PostgreSQL schema and migration strategy, from academic structure through results and finance.",
+      "Results workflow where report cards only generate once every assessment for the term is approved.",
+      "Fee module designed for multi-child checkout through Paystack or Flutterwave.",
+    ],
+    tags: ["Next.js", "TypeScript", "Express", "PostgreSQL", "Prisma"],
+    links: [],
+  },
+  {
+    id: "agencyflow",
+    visual: "image",
+    image: "/images/agencyflow.png",
+    imageAlt: "AgencyFlow CRM dashboard preview",
+    title: "AgencyFlow CRM",
+    badge: { label: "In progress", tone: "blue" },
+    note: "Private build, not yet published",
+    summary:
+      "A client and workflow management system for agencies to organize tasks, track business income, and monitor client engagement.",
+    highlights: [
+      "Dashboards for tracking client interactions, leads, and project tasks.",
+      "JWT authentication, API communication, and structured data management.",
+      "Architecture planned to grow into analytics and automation features.",
+    ],
+    tags: ["React", "TailwindCSS", "Node.js", "JWT", "MongoDB", "Vite"],
+    links: [],
+  },
+];
+
+const MORE = [
+  {
+    title: "Checkit Product Explorer",
+    image: "/images/checkit.png",
+    badge: { label: "Frontend assessment", tone: "slate" },
+    summary:
+      "A product exploration interface built as a frontend assessment for a mid-level frontend role, focused on clean data presentation, responsive layout, and polish.",
+    tags: ["Next.js", "TypeScript", "TailwindCSS", "Vercel"],
+    live: "https://frontend-assessment-godwin.vercel.app",
+    repo: "https://github.com/Godwinash/frontend-assessment-godwin",
+  },
+  {
+    title: "Lamisking Pixiesalon and Spa",
+    image: "/images/lamisking.png",
+    badge: { label: "Live", tone: "green" },
+    summary:
+      "Website for a pixie-cut specialist salon and spa in Wuse, Abuja, presenting its story and services in a clean, responsive layout.",
+    tags: ["Next.js", "TypeScript", "TailwindCSS", "Vercel"],
+    live: "https://lamisking-pixiesalon.vercel.app/",
+    repo: "https://github.com/Godwinash/lamisking-pixiesalon",
+  },
+  {
+    title: "Cilantro Kano Restaurant",
+    image: "/images/cilantro-kano.png",
+    badge: { label: "Live", tone: "green" },
+    summary:
+      "A visually driven website for a Kano restaurant that presents the brand and atmosphere in a responsive layout.",
+    tags: ["React", "TailwindCSS", "Vite", "ESLint", "Vercel"],
+    live: "https://cilantro-kano.vercel.app/",
+    repo: "https://github.com/Godwinash/cilantro-kano",
+  },
+  {
+    title: "Travel Agency Demo",
+    image: "/images/travel-agency.png",
+    badge: { label: "Live", tone: "green" },
+    summary:
+      "Landing page for a travel agency with curated city highlights, a clean hero, and a fully responsive layout.",
+    tags: ["HTML", "CSS", "JavaScript"],
+    live: "https://godwinash.github.io/travel_agency_demo",
+    repo: "https://github.com/Godwinash/travel-agency-demo",
+  },
+  {
+    title: "Yum Brand Redesign",
+    image: "/images/yum-redesign.png",
+    badge: { label: "Redesign concept", tone: "slate" },
+    summary:
+      "A UI redesign concept for a fast-food brand with modern layouts, improved readability, and a cleaner interface.",
+    tags: ["HTML", "TailwindCSS", "JavaScript"],
+    live: "https://godwinash.github.io/yum-demo",
+    repo: "https://github.com/Godwinash/yum-demo",
+  },
+];
+
+const SKILLS = [
+  {
+    title: "Frontend",
+    items: [
+      "React",
+      "Next.js",
+      "TypeScript",
+      "JavaScript",
+      "TailwindCSS",
+      "Vite",
+      "HTML5",
+      "CSS3",
+    ],
+  },
+  {
+    title: "Backend and APIs",
+    items: ["Node.js", "Express.js", "REST APIs", "GraphQL", "JWT authentication"],
+  },
+  {
+    title: "Databases",
+    items: ["PostgreSQL", "MongoDB", "Mongoose", "Redis"],
+  },
+  {
+    title: "Testing and automation",
+    items: ["Vitest", "Playwright", "Puppeteer", "ESLint"],
+  },
+  {
+    title: "Tools",
+    items: [
+      "Git",
+      "GitHub",
+      "VS Code",
+      "Chrome DevTools",
+      "Postman",
+      "BrowserStack",
+      "Jira",
+    ],
+  },
+  {
+    title: "Architecture",
+    items: [
+      "Component-based design",
+      "Database design",
+      "Authentication and authorization",
+      "API integration",
+      "Real-time web apps",
+      "Responsive design",
+    ],
+  },
+];
+
+/* -------------------------------------------------------------------------- */
+/*  Helpers, theme tokens, global CSS                                         */
+/* -------------------------------------------------------------------------- */
+
+const cn = (...classes) => classes.filter(Boolean).join(" ");
+
+const getThemeByHour = (hour) => (hour >= 7 && hour < 19 ? "light" : "dark");
+
+function makeTokens(theme) {
+  const light = theme === "light";
+  return {
+    theme,
+    light,
+    muted: light ? "text-slate-700" : "text-slate-300",
+    faint: light ? "text-slate-600" : "text-slate-400",
+    chip: light
+      ? "border-white/70 bg-white/55 text-slate-700"
+      : "border-white/10 bg-white/[0.06] text-slate-200",
+    line: light ? "border-slate-300/70" : "border-white/15",
+    divide: light ? "divide-slate-300/70" : "divide-white/10",
+  };
 }
 
-function cn(...classes) {
-  return classes.filter(Boolean).join(" ");
+const ThemeCtx = createContext(makeTokens("light"));
+const useT = () => useContext(ThemeCtx);
+
+const GLOBAL_CSS = `
+html { scroll-behavior: smooth; }
+a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+@keyframes ga-rise {
+  0%   { transform: translate3d(0, 0, 0) scale(0.96); opacity: 0; }
+  12%  { opacity: 1; }
+  50%  { transform: translate3d(14px, -60vh, 0) scale(1.03); }
+  88%  { opacity: 1; }
+  100% { transform: translate3d(-10px, -130vh, 0) scale(0.98); opacity: 0; }
+}
+@keyframes ga-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(0, -14px, 0); }
+}
+@keyframes ga-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(1.5); }
+}
+.ga-bubble {
+  animation-name: ga-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
+}
+.ga-float { animation: ga-float 9s ease-in-out infinite; }
+.ga-pulse { animation: ga-pulse 2s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .ga-bubble { display: none; }
+  .ga-float, .ga-pulse { animation: none; }
+}
+`;
+
+/* -------------------------------------------------------------------------- */
+/*  Icons                                                                     */
+/* -------------------------------------------------------------------------- */
+
+function Svg({ children, size = 16, ...rest }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      {...rest}
+    >
+      {children}
+    </svg>
+  );
 }
 
-const sectionEase = [0.22, 1, 0.36, 1];
+const ArrowUpRight = () => (
+  <Svg size={14}>
+    <path d="M7 17 17 7M8 7h9v9" />
+  </Svg>
+);
 
-function GlassCard({ theme, className = "", children }) {
+const DownloadIcon = () => (
+  <Svg>
+    <path d="M12 3v12m0 0-4-4m4 4 4-4M4 21h16" />
+  </Svg>
+);
+
+const SunIcon = () => (
+  <Svg size={18}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+  </Svg>
+);
+
+const MoonIcon = () => (
+  <Svg size={18}>
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+  </Svg>
+);
+
+/* -------------------------------------------------------------------------- */
+/*  Primitives                                                                */
+/* -------------------------------------------------------------------------- */
+
+function GlassCard({ className = "", radius = "rounded-[2rem]", children }) {
+  const { light } = useT();
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[2rem] border backdrop-blur-xl",
-        theme === "light"
-          ? "border-white/60 bg-white/28 shadow-[0_18px_50px_rgba(59,130,246,0.10)]"
+        "relative overflow-hidden border backdrop-blur-xl",
+        radius,
+        light
+          ? "border-white/60 bg-white/30 shadow-[0_18px_50px_rgba(59,130,246,0.10)]"
           : "border-white/15 bg-white/10 shadow-[0_18px_50px_rgba(0,0,0,0.28)]",
         className
       )}
     >
       <div
+        aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute inset-[1px] rounded-[calc(2rem-1px)]",
-          theme === "light"
-            ? "bg-gradient-to-br from-white/50 via-blue-100/12 to-purple-100/10"
-            : "bg-gradient-to-br from-white/12 via-blue-400/6 to-purple-400/6"
+          "pointer-events-none absolute inset-[1px] rounded-[inherit]",
+          light
+            ? "bg-gradient-to-br from-white/50 via-blue-100/10 to-purple-100/10"
+            : "bg-gradient-to-br from-white/10 via-blue-400/5 to-purple-400/5"
         )}
       />
       <div className="relative z-10">{children}</div>
@@ -35,111 +366,226 @@ function GlassCard({ theme, className = "", children }) {
   );
 }
 
-function SectionReveal({ children, className = "" }) {
+function HeroReveal({ children, index = 0, className = "" }) {
+  const reduce = useReducedMotion();
   return (
     <motion.div
-      initial={{ opacity: 0, y: 34, filter: "blur(10px)", scale: 0.985 }}
-      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)", scale: 1 }}
-      viewport={{ once: false, amount: 0.26 }}
-      transition={{ duration: 0.85, ease: sectionEase }}
       className={className}
+      initial={reduce ? false : { opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.8, ease: EASE, delay: 0.1 + index * 0.12 }}
     >
       {children}
     </motion.div>
   );
 }
 
-function StaggerGroup({ children, className = "" }) {
+function Badge({ tone = "slate", children }) {
+  const { light } = useT();
+  const tones = {
+    blue: light ? "bg-blue-100 text-blue-800" : "bg-blue-500/20 text-blue-100",
+    green: light
+      ? "bg-emerald-100 text-emerald-800"
+      : "bg-emerald-500/20 text-emerald-100",
+    slate: light ? "bg-slate-200/80 text-slate-700" : "bg-white/10 text-slate-200",
+  };
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: false, amount: 0.18 }}
-      variants={{
-        hidden: {},
-        show: {
-          transition: {
-            staggerChildren: 0.1,
-          },
-        },
-      }}
-      className={className}
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
+        tones[tone]
+      )}
     >
       {children}
-    </motion.div>
+    </span>
   );
 }
 
-function StaggerItem({ children, className = "" }) {
+function TagList({ tags }) {
+  const { chip } = useT();
   return (
-    <motion.div
-      variants={{
-        hidden: {
-          opacity: 0,
-          y: 26,
-          filter: "blur(10px)",
-          scale: 0.985,
-        },
-        show: {
-          opacity: 1,
-          y: 0,
-          filter: "blur(0px)",
-          scale: 1,
-          transition: {
-            duration: 0.8,
-            ease: sectionEase,
-          },
-        },
-      }}
-      className={className}
-    >
-      {children}
-    </motion.div>
+    <ul className="flex flex-wrap gap-2">
+      {tags.map((tag) => (
+        <li
+          key={tag}
+          className={cn("rounded-full border px-3 py-1 text-sm", chip)}
+        >
+          {tag}
+        </li>
+      ))}
+    </ul>
   );
 }
 
-function Navbar({ theme, activeSection }) {
-  const navItems = [
-    { label: "Home", href: "#home", id: "home" },
-    { label: "About", href: "#about", id: "about" },
-    { label: "Projects", href: "#projects", id: "projects" },
-    { label: "Skills", href: "#skills", id: "skills" },
-    { label: "Contact", href: "#contact", id: "contact" },
-  ];
+function ExternalLink({ href, label, variant = "primary", children }) {
+  const { light } = useT();
+  const styles =
+    variant === "primary"
+      ? light
+        ? "bg-blue-600 text-white hover:bg-blue-700"
+        : "bg-blue-500/25 text-blue-100 hover:bg-blue-500/35"
+      : light
+      ? "bg-white/60 text-slate-800 hover:bg-white/85"
+      : "bg-white/[0.08] text-slate-200 hover:bg-white/[0.14]";
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={label}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition duration-300",
+        styles
+      )}
+    >
+      {children}
+      <ArrowUpRight />
+    </a>
+  );
+}
+
+function SectionHead({ title, blurb }) {
+  const { muted } = useT();
+  return (
+    <div className="space-y-3">
+      <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
+        {title}
+      </h2>
+      {blurb && <p className={cn("max-w-2xl leading-8", muted)}>{blurb}</p>}
+    </div>
+  );
+}
+
+const btnPrimary = (light) =>
+  cn(
+    "inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition duration-300",
+    light
+      ? "bg-blue-600 text-white shadow-[0_10px_30px_rgba(37,99,235,0.28)] hover:bg-blue-700"
+      : "border border-white/15 bg-blue-500/40 text-white hover:bg-blue-500/55"
+  );
+
+const btnGhost = (light) =>
+  cn(
+    "inline-flex items-center justify-center gap-2 rounded-full border px-6 py-3 text-sm font-medium transition duration-300",
+    light
+      ? "border-blue-200 bg-white/40 text-slate-900 hover:bg-white/75"
+      : "border-white/15 bg-white/5 text-white hover:bg-white/10"
+  );
+
+/* -------------------------------------------------------------------------- */
+/*  Background                                                                */
+/* -------------------------------------------------------------------------- */
+
+function BubbleField() {
+  const { light } = useT();
+
+  const bubbles = useMemo(
+    () => [
+      { size: 220, left: "6%", dur: 34, delay: 0 },
+      { size: 130, left: "22%", dur: 26, delay: 9 },
+      { size: 180, left: "40%", dur: 38, delay: 18 },
+      { size: 90, left: "55%", dur: 22, delay: 4 },
+      { size: 200, left: "70%", dur: 36, delay: 24 },
+      { size: 120, left: "84%", dur: 28, delay: 12 },
+      { size: 70, left: "94%", dur: 20, delay: 7 },
+    ],
+    []
+  );
+
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+    >
+      {bubbles.map((b, i) => (
+        <span
+          key={i}
+          className="ga-bubble absolute rounded-full"
+          style={{
+            width: b.size,
+            height: b.size,
+            left: b.left,
+            bottom: -b.size,
+            animationDuration: `${b.dur}s`,
+            animationDelay: `-${b.delay}s`,
+            background: light
+              ? "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(219,234,254,0.5) 24%, rgba(96,165,250,0.22) 48%, rgba(168,85,247,0.12) 72%, rgba(255,255,255,0.04) 100%)"
+              : "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.36), rgba(96,165,250,0.16) 30%, rgba(59,130,246,0.14) 58%, rgba(168,85,247,0.07) 78%, rgba(255,255,255,0.02) 100%)",
+            border: light
+              ? "1px solid rgba(255,255,255,0.6)"
+              : "1px solid rgba(255,255,255,0.12)",
+            opacity: 0,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Navigation                                                                */
+/* -------------------------------------------------------------------------- */
+
+function ThemeToggle({ onToggle, className = "" }) {
+  const { light } = useT();
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={light ? "Switch to dark theme" : "Switch to light theme"}
+      className={cn(
+        "inline-flex h-9 w-9 items-center justify-center rounded-full transition duration-300",
+        light
+          ? "text-slate-700 hover:bg-blue-100/70"
+          : "text-slate-200 hover:bg-white/10",
+        className
+      )}
+    >
+      {light ? <MoonIcon /> : <SunIcon />}
+    </button>
+  );
+}
+
+function Navbar({ activeSection, onToggleTheme }) {
+  const { light } = useT();
+
+  const linkClass = (isActive) =>
+    cn(
+      "rounded-full px-4 py-2 text-sm transition duration-300",
+      isActive
+        ? light
+          ? "bg-blue-600 text-white"
+          : "bg-white/15 text-white"
+        : light
+        ? "text-slate-700 hover:bg-blue-100/70 hover:text-slate-950"
+        : "text-slate-200 hover:bg-white/10 hover:text-white"
+    );
 
   return (
     <>
-      <header className="fixed inset-x-0 top-5 z-50 mx-auto hidden w-full justify-center px-4 md:flex">
+      <header className="fixed inset-x-0 top-5 z-50 hidden justify-center px-4 md:flex">
         <GlassCard
-          theme={theme}
-          className="w-full max-w-5xl rounded-full px-4 py-3"
+          radius="rounded-full"
+          className="w-full max-w-5xl px-4 py-2.5"
         >
           <div className="flex items-center justify-between gap-4">
             <a
               href="#home"
-              className="text-sm font-semibold uppercase tracking-[0.2em]"
+              aria-label="Godwin Ashiekaa, back to top"
+              className="text-sm font-semibold tracking-[0.2em]"
             >
               G.A
             </a>
 
-            <nav className="flex items-center gap-2">
-              {navItems.map((item) => {
+            <nav aria-label="Primary" className="flex items-center gap-1">
+              {NAV.map((item) => {
                 const isActive = activeSection === item.id;
-
                 return (
                   <a
-                    key={item.label}
-                    href={item.href}
-                    className={cn(
-                      "rounded-full px-4 py-2 text-sm transition duration-300",
-                      isActive
-                        ? theme === "light"
-                          ? "bg-blue-500 text-white shadow-[0_8px_24px_rgba(59,130,246,0.18)]"
-                          : "bg-white/14 text-white"
-                        : theme === "light"
-                        ? "text-slate-700 hover:bg-blue-100/60 hover:text-slate-950"
-                        : "text-slate-200 hover:bg-white/10 hover:text-white"
-                    )}
+                    key={item.id}
+                    href={`#${item.id}`}
+                    aria-current={isActive ? "true" : undefined}
+                    className={linkClass(isActive)}
                   >
                     {item.label}
                   </a>
@@ -147,46 +593,59 @@ function Navbar({ theme, activeSection }) {
               })}
             </nav>
 
-            <a
-              href="#contact"
-              className={cn(
-                "rounded-full px-4 py-2 text-sm font-medium transition duration-300",
-                theme === "light"
-                  ? "bg-gradient-to-r from-blue-500/90 to-blue-400/90 text-white hover:from-blue-500 hover:to-indigo-500"
-                  : "bg-gradient-to-r from-blue-500/25 to-purple-500/20 text-white hover:from-blue-500/35 hover:to-purple-500/30"
-              )}
-            >
-              Let’s Talk
-            </a>
+            <div className="flex items-center gap-2">
+              <ThemeToggle onToggle={onToggleTheme} />
+              <a
+                href={RESUME_HREF}
+                download
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm font-medium transition duration-300",
+                  light
+                    ? "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-blue-500/35 text-white hover:bg-blue-500/50"
+                )}
+              >
+                Résumé
+              </a>
+            </div>
           </div>
         </GlassCard>
       </header>
 
+      <div className="fixed right-4 top-4 z-50 md:hidden">
+        <GlassCard radius="rounded-full" className="p-1">
+          <ThemeToggle onToggle={onToggleTheme} className="h-10 w-10" />
+        </GlassCard>
+      </div>
+
       <div className="fixed inset-x-0 bottom-4 z-50 px-4 md:hidden">
         <GlassCard
-          theme={theme}
-          className="mx-auto w-full max-w-md rounded-full px-2 py-2"
+          radius="rounded-full"
+          className="mx-auto w-full max-w-md p-2"
         >
-          <nav className="flex items-center justify-between gap-1">
-            {navItems.map((item) => {
+          <nav
+            aria-label="Primary"
+            className="flex items-center justify-between gap-1"
+          >
+            {NAV.map((item) => {
               const isActive = activeSection === item.id;
-
               return (
                 <a
-                  key={item.label}
-                  href={item.href}
+                  key={item.id}
+                  href={`#${item.id}`}
+                  aria-current={isActive ? "true" : undefined}
                   className={cn(
-                    "rounded-full px-3 py-2 text-[11px] font-medium transition duration-300",
+                    "rounded-full px-2.5 py-2 text-[11px] font-medium transition duration-300",
                     isActive
-                      ? theme === "light"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white/14 text-white"
-                      : theme === "light"
-                      ? "text-slate-700 hover:bg-blue-100/60"
+                      ? light
+                        ? "bg-blue-600 text-white"
+                        : "bg-white/15 text-white"
+                      : light
+                      ? "text-slate-700 hover:bg-blue-100/70"
                       : "text-slate-200 hover:bg-white/10"
                   )}
                 >
-                  {item.label}
+                  {item.short}
                 </a>
               );
             })}
@@ -197,387 +656,850 @@ function Navbar({ theme, activeSection }) {
   );
 }
 
-function Loader({ theme, onDone }) {
-  const [progress, setProgress] = useState(0);
+/* -------------------------------------------------------------------------- */
+/*  Hero                                                                      */
+/* -------------------------------------------------------------------------- */
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + Math.floor(Math.random() * 12) + 8;
+function HeroPanel() {
+  const { light, faint, divide } = useT();
 
-        if (next >= 100) {
-          clearInterval(timer);
-          setTimeout(onDone, 400);
-          return 100;
-        }
+  const orb = light
+    ? "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0.3) 26%, rgba(96,165,250,0.28) 58%, rgba(168,85,247,0.14) 80%, rgba(255,255,255,0.08) 100%)"
+    : "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.28), rgba(96,165,250,0.2) 30%, rgba(59,130,246,0.16) 62%, rgba(168,85,247,0.1) 88%, rgba(255,255,255,0.03) 100%)";
+  const orbBorder = light
+    ? "1px solid rgba(255,255,255,0.7)"
+    : "1px solid rgba(255,255,255,0.14)";
 
-        return next;
-      });
-    }, 120);
-
-    return () => clearInterval(timer);
-  }, [onDone]);
+  const rows = [
+    ["Working as", "Lead Product Developer at African Data Strategist"],
+    ["Building", "A school information system and an agency CRM"],
+    ["Studying", "B.Sc Information Technology at Bayero University Kano"],
+  ];
 
   return (
-    <motion.div
-      initial={{ opacity: 1 }}
-      exit={{ opacity: 0, filter: "blur(10px)", scale: 1.03 }}
-      className="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden"
-    >
+    <div className="relative mx-auto w-full max-w-md">
       <div
-        className={cn(
-          "absolute inset-0",
-          theme === "light"
-            ? "bg-[radial-gradient(circle_at_top,rgba(96,165,250,0.18),transparent_30%),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.10),transparent_20%),linear-gradient(180deg,#f7fbff_0%,#e7f2ff_55%,#edf6ff_100%)]"
-            : "bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.20),transparent_25%),radial-gradient(circle_at_80%_12%,rgba(168,85,247,0.14),transparent_22%),linear-gradient(180deg,#040816_0%,#0a1428_48%,#0a1120_100%)]"
-        )}
+        aria-hidden="true"
+        className="ga-float pointer-events-none absolute -right-8 -top-20 h-64 w-64 rounded-full"
+        style={{ background: orb, border: orbBorder }}
+      />
+      <div
+        aria-hidden="true"
+        className="ga-float pointer-events-none absolute -bottom-10 -left-8 h-28 w-28 rounded-full"
+        style={{ background: orb, border: orbBorder, animationDelay: "-4s" }}
       />
 
-      <div className="absolute inset-0 overflow-hidden">
-        {[...Array(6)].map((_, i) => (
-          <motion.div
-            key={i}
-            className={cn(
-              "absolute rounded-full blur-2xl",
-              theme === "light" ? "bg-blue-200/35" : "bg-blue-300/10"
-            )}
-            style={{
-              width: 140 + i * 28,
-              height: 140 + i * 28,
-              left: `${(i * 15) % 100}%`,
-              top: `${(i * 12) % 100}%`,
-            }}
-            animate={{ y: [0, -16, 0], x: [0, 10, -4, 0] }}
-            transition={{
-              duration: 6 + i,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          />
-        ))}
-      </div>
-
-      <GlassCard theme={theme} className="w-[min(92vw,420px)] px-8 py-10">
-        <div className="space-y-6 text-center">
-          <div className="space-y-2">
-            <p
-              className={cn(
-                "text-xs uppercase tracking-[0.35em]",
-                theme === "light" ? "text-slate-500" : "text-slate-300/80"
-              )}
-            >
-              Initializing portfolio
-            </p>
-            <h1
-              className={cn(
-                "text-3xl font-semibold tracking-tight",
-                theme === "light" ? "text-slate-900" : "text-white"
-              )}
-            >
-              Godwin Ashiekaa
-            </h1>
-          </div>
-
-          <div className="space-y-3">
-            <div
-              className={cn(
-                "h-3 overflow-hidden rounded-full border",
-                theme === "light"
-                  ? "border-white/70 bg-white/55"
-                  : "border-white/10 bg-white/5"
-              )}
-            >
-              <motion.div
-                className={cn(
-                  "h-full rounded-full",
-                  theme === "light"
-                    ? "bg-gradient-to-r from-blue-500 via-sky-300 to-purple-300"
-                    : "bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400"
-                )}
-                animate={{ width: `${progress}%` }}
-                transition={{ ease: "easeOut", duration: 0.25 }}
-              />
+      <GlassCard className="p-6 md:p-7">
+        <p className="text-lg font-semibold">Right now</p>
+        <dl className={cn("mt-4 divide-y", divide)}>
+          {rows.map(([label, value]) => (
+            <div key={label} className="py-3.5">
+              <dt className={cn("text-sm", faint)}>{label}</dt>
+              <dd className="mt-1 leading-7">{value}</dd>
             </div>
-
-            <p
-              className={cn(
-                "text-sm",
-                theme === "light" ? "text-slate-600" : "text-slate-300"
-              )}
-            >
-              {progress}%
-            </p>
-          </div>
-        </div>
+          ))}
+        </dl>
       </GlassCard>
-    </motion.div>
-  );
-}
-
-function BubbleField({ theme }) {
-  const [phase, setPhase] = useState("burst");
-  const [reducedMotion, setReducedMotion] = useState(false);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setReducedMotion(mq.matches);
-    const handler = (e) => setReducedMotion(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    let timeoutId;
-
-    const runCycle = () => {
-      setPhase("burst");
-      timeoutId = setTimeout(() => {
-        setPhase("calm");
-        timeoutId = setTimeout(runCycle, 6000);
-      }, 3200);
-    };
-
-    runCycle();
-
-    return () => clearTimeout(timeoutId);
-  }, [reducedMotion]);
-
-  const bubbles = useMemo(
-    () =>
-      Array.from({ length: 18 }, (_, i) => {
-        const sizeMap = [260, 220, 190, 160, 140, 120, 100, 84, 68];
-
-        const size = sizeMap[i % sizeMap.length];
-        const isLarge = size >= 190;
-        const isMedium = size >= 100 && size < 190;
-        const isSmall = size < 100;
-
-        return {
-          id: i,
-          size,
-          left: `${(i * 15 + 3) % 100}%`,
-          leftAlt: `${(i * 19 + 17) % 100}%`,
-          burstDuration: isLarge
-            ? 11 + (i % 3)
-            : isMedium
-            ? 8 + (i % 3)
-            : 5 + (i % 2),
-          calmDuration: isLarge
-            ? 18 + (i % 4)
-            : isMedium
-            ? 14 + (i % 4)
-            : 10 + (i % 3),
-          delay: (i % 12) * 0.22,
-          driftA: (i % 2 === 0 ? 1 : -1) * (8 + (i % 4) * 4),
-          driftB: (i % 2 === 0 ? -1 : 1) * (5 + (i % 5) * 3),
-          wobble: 3 + (i % 4) * 2,
-          opacity: isLarge ? 0.34 : isMedium ? 0.28 : 0.22,
-          blur: isLarge ? 0 : isMedium ? 1 : 0,
-          bottomStart: -18 - (i % 8) * 8,
-          showInCalm:
-            isLarge ? i % 2 === 0 : isMedium ? i % 3 !== 0 : i % 4 === 0,
-          extraBurst: isSmall && (i % 2 === 0 || i % 5 === 0),
-        };
-      }),
-    []
-  );
-
-  if (reducedMotion) {
-    return null;
-  }
-
-  return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
-      {bubbles.map((bubble) => {
-        const visible = phase === "burst" ? true : bubble.showInCalm;
-
-        const duration =
-          phase === "burst" ? bubble.burstDuration : bubble.calmDuration;
-
-        const animateY =
-          phase === "burst" ? ["0vh", "-132vh"] : ["0vh", "-118vh"];
-
-        const animateScale =
-          phase === "burst"
-            ? [0.7, 1.08, 0.95, 1.12, 0.96]
-            : [0.9, 1.01, 0.98, 1.02, 0.99];
-
-        const animateX =
-          phase === "burst"
-            ? [0, bubble.driftA, bubble.driftB, bubble.wobble, 0]
-            : [0, bubble.driftA * 0.55, bubble.wobble, 0];
-
-        const bubbleOpacity =
-          phase === "burst"
-            ? bubble.extraBurst
-              ? Math.min(bubble.opacity + 0.08, 0.38)
-              : bubble.opacity
-            : bubble.opacity * 0.72;
-
-        return (
-          <motion.div
-            key={bubble.id}
-            className="absolute rounded-full will-change-transform"
-            initial={false}
-            animate={{
-              y: animateY,
-              x: animateX,
-              scale: animateScale,
-              opacity: visible ? bubbleOpacity : 0,
-              left: phase === "burst" ? bubble.left : bubble.leftAlt,
-            }}
-            transition={{
-              duration,
-              delay: bubble.delay,
-              repeat: Infinity,
-              ease: phase === "burst" ? "easeOut" : "easeInOut",
-              opacity: { duration: 1 },
-              left: { duration: 2.2, ease: "easeInOut" },
-            }}
-            style={{
-              width: bubble.size,
-              height: bubble.size,
-              bottom: `${bubble.bottomStart}%`,
-              filter: bubble.blur ? `blur(${bubble.blur}px)` : undefined,
-              background:
-                theme === "light"
-                  ? "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.96), rgba(219,234,254,0.52) 24%, rgba(96,165,250,0.24) 48%, rgba(168,85,247,0.14) 72%, rgba(255,255,255,0.04) 100%)"
-                  : "radial-gradient(circle at 30% 30%, rgba(255,255,255,0.42), rgba(96,165,250,0.18) 30%, rgba(59,130,246,0.16) 58%, rgba(168,85,247,0.08) 78%, rgba(255,255,255,0.02) 100%)",
-              border:
-                theme === "light"
-                  ? "1px solid rgba(255,255,255,0.62)"
-                  : "1px solid rgba(255,255,255,0.14)",
-              boxShadow:
-                theme === "light"
-                  ? "inset -14px -14px 32px rgba(255,255,255,0.14), inset 10px 10px 26px rgba(255,255,255,0.62), 0 20px 45px rgba(59,130,246,0.10)"
-                  : "inset -12px -12px 30px rgba(255,255,255,0.02), inset 10px 10px 20px rgba(255,255,255,0.08), 0 20px 50px rgba(0,0,0,0.2)",
-            }}
-          >
-            <div
-              className="absolute left-[18%] top-[14%] h-[20%] w-[20%] rounded-full bg-white/60 blur-sm"
-              style={{ opacity: theme === "light" ? 0.96 : 0.45 }}
-            />
-            <div
-              className="absolute right-[20%] bottom-[18%] h-[12%] w-[12%] rounded-full blur-md"
-              style={{
-                opacity: theme === "light" ? 0.28 : 0.12,
-                background:
-                  theme === "light"
-                    ? "rgba(96,165,250,0.35)"
-                    : "rgba(168,85,247,0.18)",
-              }}
-            />
-          </motion.div>
-        );
-      })}
-
-      <motion.div
-        className="absolute inset-x-0 bottom-0 h-48"
-        animate={{
-          opacity: phase === "burst" ? 0.35 : 0.16,
-        }}
-        transition={{ duration: 1.2 }}
-        style={{
-          background:
-            theme === "light"
-              ? "radial-gradient(ellipse at bottom, rgba(96,165,250,0.22), rgba(255,255,255,0.0) 70%)"
-              : "radial-gradient(ellipse at bottom, rgba(96,165,250,0.14), rgba(255,255,255,0.0) 70%)",
-          filter: "blur(12px)",
-        }}
-      />
     </div>
   );
 }
 
-function Footer({ theme }) {
+function Hero() {
+  const { light, muted, chip } = useT();
+
   return (
-    <footer className="relative z-10 px-4 pb-28 pt-6 md:px-8 md:pb-14">
-      <div className="mx-auto max-w-6xl">
-        <GlassCard
-          theme={theme}
-          className="overflow-hidden px-6 py-6 md:px-8 md:py-7"
-        >
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-3">
-              <p className="text-xs uppercase tracking-[0.3em] opacity-65">
-                Portfolio
-              </p>
-              <h3 className="text-xl font-semibold md:text-2xl">
-                Built with clarity, motion, and intention.
-              </h3>
-              <p className="max-w-2xl text-sm leading-7 opacity-72">
-                Software developer focused on building modern web applications
-                with clean architecture, refined interfaces, and thoughtful user
-                experience.
-              </p>
-            </div>
+    <section
+      id="home"
+      className="flex min-h-[100svh] scroll-mt-28 items-center px-4 pb-24 pt-32 md:px-8"
+    >
+      <div className="mx-auto grid w-full max-w-6xl items-center gap-14 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="space-y-7">
+          <HeroReveal index={0}>
+            <p
+              className={cn(
+                "inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-sm",
+                chip
+              )}
+            >
+              <span
+                aria-hidden="true"
+                className="ga-pulse h-2 w-2 rounded-full bg-emerald-500"
+              />
+              Open to opportunities
+            </p>
+          </HeroReveal>
 
-            <div className="flex flex-col gap-3 md:items-end">
-              <div className="flex flex-wrap gap-3">
+          <HeroReveal index={1}>
+            <h1 className="max-w-3xl text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-[3.6rem]">
+              Software engineer building dashboards, platforms, and polished web
+              products.
+            </h1>
+          </HeroReveal>
+
+          <HeroReveal index={2}>
+            <p className={cn("max-w-xl text-lg leading-8", muted)}>
+              I build with React, Next.js, TypeScript, Node.js, and PostgreSQL.
+              Right now I lead product development at an early-stage fintech and
+              data company.
+            </p>
+          </HeroReveal>
+
+          <HeroReveal index={3}>
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+              <a href="#projects" className={btnPrimary(light)}>
+                View my work
+              </a>
+              <a href={RESUME_HREF} download className={btnGhost(light)}>
+                <DownloadIcon />
+                Download résumé
+              </a>
+              <div className="flex items-center gap-5 text-sm">
                 <a
-                  href="#home"
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
-                      : "bg-white/8 text-slate-200 hover:bg-white/12"
-                  )}
+                  href={GITHUB}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-4 hover:underline"
                 >
-                  Back to Top
+                  GitHub
                 </a>
-
                 <a
-                  href="#contact"
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
-                      : "bg-gradient-to-r from-blue-500/30 to-purple-500/20 text-white"
-                  )}
+                  href={LINKEDIN}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline-offset-4 hover:underline"
                 >
-                  Contact
+                  LinkedIn
                 </a>
               </div>
+            </div>
+          </HeroReveal>
+        </div>
 
-              <p className="text-xs tracking-[0.2em] opacity-55">
-                GODWIN ASHIEKAA
+        <HeroReveal index={4}>
+          <HeroPanel />
+        </HeroReveal>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  About                                                                     */
+/* -------------------------------------------------------------------------- */
+
+function About() {
+  const { muted, faint, line } = useT();
+
+  const facts = [
+    ["Focus", "Frontend-led, full-stack capable"],
+    ["Based in", "Kano, Nigeria"],
+    ["Education", "B.Sc Information Technology, Bayero University Kano"],
+    ["Works with", "React, Next.js, TypeScript, Node.js, PostgreSQL"],
+  ];
+
+  return (
+    <section id="about" className="scroll-mt-28 px-4 md:px-8">
+      <div className="mx-auto max-w-6xl">
+        <SectionHead title="About me" />
+
+        <div className="mt-10 grid items-start gap-10 lg:grid-cols-[0.75fr_1.25fr]">
+          <GlassCard className="h-[420px] p-2">
+            <img
+              src="/images/aboutimage.png"
+              alt="Godwin Ashiekaa"
+              className="h-full w-full rounded-[1.6rem] object-cover"
+              loading="eager"
+              draggable="false"
+            />
+          </GlassCard>
+
+          <div className="space-y-9">
+            <div className={cn("max-w-2xl space-y-4 leading-8", muted)}>
+              <p>
+                I’m a software engineer with a strong frontend foundation and
+                hands-on experience building dashboards, CRM platforms,
+                real-time applications, and authentication systems. I care about
+                performance, usability, and architecture that stays
+                maintainable as a product grows.
+              </p>
+              <p>
+                Alongside leading product development for an early-stage fintech
+                and data company, I’m building a school information system and a
+                CRM for agencies, so my days split between the interface and the
+                systems behind it.
               </p>
             </div>
+
+            <dl className="grid max-w-2xl gap-x-8 gap-y-5 sm:grid-cols-2">
+              {facts.map(([label, value]) => (
+                <div key={label} className={cn("border-t pt-4", line)}>
+                  <dt className={cn("text-sm", faint)}>{label}</dt>
+                  <dd className="mt-1 leading-7">{value}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
-        </GlassCard>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Experience                                                                */
+/* -------------------------------------------------------------------------- */
+
+function Experience() {
+  const { light, muted, faint, chip, line } = useT();
+
+  return (
+    <section id="experience" className="scroll-mt-28 px-4 md:px-8">
+      <div className="mx-auto max-w-6xl">
+        <SectionHead title="Where I’ve worked" />
+
+        <div className="mt-12 grid gap-14 lg:grid-cols-[1.5fr_1fr]">
+          <ol className={cn("relative space-y-12 border-l pl-8", line)}>
+            {EXPERIENCE.map((job) => (
+              <li key={job.org} className="relative">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "absolute -left-[2.4rem] top-2 h-3 w-3 rounded-full ring-4",
+                    light
+                      ? "bg-blue-600 ring-[#eef6ff]"
+                      : "bg-blue-400 ring-[#07101f]"
+                  )}
+                />
+                <p className={cn("text-sm", faint)}>{job.period}</p>
+                <h3 className="mt-1 text-xl font-semibold md:text-2xl">
+                  {job.role}
+                </h3>
+                <p className={cn("mt-1", muted)}>{job.org}</p>
+                <p className={cn("text-sm", faint)}>{job.place}</p>
+
+                <ul className={cn("mt-4 max-w-2xl space-y-2.5 leading-7", muted)}>
+                  {job.points.map((point) => (
+                    <li key={point} className="flex gap-3">
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "mt-3 h-1 w-1 shrink-0 rounded-full",
+                          light ? "bg-slate-500" : "bg-slate-400"
+                        )}
+                      />
+                      <span>{point}</span>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ol>
+
+          <div className="space-y-5 self-start">
+            <h3 className="text-xl font-semibold md:text-2xl">Education</h3>
+            <div>
+              <p className="font-medium">{EDUCATION.degree}</p>
+              <p className={muted}>{EDUCATION.school}</p>
+              <p className={cn("text-sm", faint)}>{EDUCATION.period}</p>
+            </div>
+            <div className="space-y-3">
+              <p className={cn("text-sm", faint)}>Coursework</p>
+              <ul className="flex flex-wrap gap-2">
+                {EDUCATION.coursework.map((course) => (
+                  <li
+                    key={course}
+                    className={cn("rounded-full border px-3 py-1 text-sm", chip)}
+                  >
+                    {course}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Projects                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function ProbeVisual() {
+  const pts = [
+    [0, 96], [20, 90], [40, 94], [60, 84], [80, 88], [100, 78], [120, 84],
+    [140, 72], [160, 80], [180, 70], [200, 62], [218, 28], [240, 58],
+    [260, 74], [280, 66], [300, 72], [320, 60],
+  ];
+  const line = pts.map((p) => p.join(",")).join(" ");
+  const area = `M${pts.map((p) => p.join(",")).join(" L")} L320,140 L0,140 Z`;
+
+  return (
+    <div className="flex h-full flex-col bg-[#060d1b] p-4 text-white">
+      <div className="flex items-center justify-between text-xs text-slate-400">
+        <span>Forensic Probe</span>
+        <span className="flex items-center gap-1.5 text-rose-300">
+          <span
+            aria-hidden="true"
+            className="ga-pulse h-1.5 w-1.5 rounded-full bg-rose-400"
+          />
+          Strike-Zone
+        </span>
+      </div>
+
+      <svg
+        viewBox="0 0 320 140"
+        className="mt-3 min-h-0 w-full flex-1"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Illustrative line chart with one highlighted anomaly"
+      >
+        <defs>
+          <linearGradient id="probeFill" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stopColor="#38bdf8" stopOpacity="0.35" />
+            <stop offset="1" stopColor="#38bdf8" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={area} fill="url(#probeFill)" />
+        <polyline
+          points={line}
+          fill="none"
+          stroke="#38bdf8"
+          strokeWidth="2"
+          strokeLinejoin="round"
+        />
+        <rect
+          x="196"
+          y="8"
+          width="44"
+          height="124"
+          rx="6"
+          fill="#f43f5e"
+          fillOpacity="0.1"
+          stroke="#f43f5e"
+          strokeOpacity="0.55"
+          strokeDasharray="3 3"
+        />
+        <circle cx="218" cy="28" r="4" fill="#f43f5e" />
+      </svg>
+
+      <div className="mt-3 grid grid-cols-3 gap-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="space-y-1.5 rounded-lg border border-white/10 bg-white/[0.05] p-2"
+          >
+            <span className="block h-1.5 w-2/3 rounded bg-slate-500/50" />
+            <span className="block h-1.5 w-1/3 rounded bg-slate-600/50" />
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[11px] text-slate-500">
+        Interface illustration, not real data
+      </p>
+    </div>
+  );
+}
+
+function SchoolVisual() {
+  const boxes = [
+    { x: 16, y: 24, label: "students" },
+    { x: 117, y: 24, label: "assessments" },
+    { x: 218, y: 24, label: "report_cards" },
+    { x: 16, y: 88, label: "attendance" },
+    { x: 117, y: 88, label: "invoices" },
+    { x: 218, y: 88, label: "payments" },
+    { x: 16, y: 152, label: "users" },
+    { x: 117, y: 152, label: "fee_structures" },
+  ];
+  const links = [
+    [102, 39, 117, 39],
+    [203, 39, 218, 39],
+    [59, 54, 59, 88],
+    [203, 103, 218, 103],
+    [59, 118, 59, 152],
+    [160, 152, 160, 118],
+  ];
+
+  return (
+    <div className="flex h-full flex-col bg-[#060d1b] p-4 text-white">
+      <p className="text-xs text-slate-400">Schema overview, simplified</p>
+      <svg
+        viewBox="0 0 320 200"
+        className="mt-2 min-h-0 w-full flex-1"
+        preserveAspectRatio="xMidYMid meet"
+        role="img"
+        aria-label="Simplified diagram of connected database tables"
+      >
+        {links.map(([x1, y1, x2, y2], i) => (
+          <line
+            key={i}
+            x1={x1}
+            y1={y1}
+            x2={x2}
+            y2={y2}
+            stroke="#475569"
+            strokeWidth="1.5"
+          />
+        ))}
+        {boxes.map((b) => (
+          <g key={b.label}>
+            <rect
+              x={b.x}
+              y={b.y}
+              width="86"
+              height="30"
+              rx="7"
+              fill="#0f1b33"
+              stroke="#38bdf8"
+              strokeOpacity="0.45"
+            />
+            <text
+              x={b.x + 43}
+              y={b.y + 19}
+              textAnchor="middle"
+              fontSize="9.5"
+              fill="#cbd5e1"
+              fontFamily="ui-monospace, SFMono-Regular, Menlo, monospace"
+            >
+              {b.label}
+            </text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function ProjectVisual({ project }) {
+  const { light } = useT();
+  return (
+    <div
+      className={cn(
+        "relative h-64 overflow-hidden rounded-[1.5rem] border md:h-80",
+        light ? "border-white/70" : "border-white/10"
+      )}
+    >
+      {project.visual === "probe" && <ProbeVisual />}
+      {project.visual === "school" && <SchoolVisual />}
+      {project.visual === "image" && (
+        <img
+          src={project.image}
+          alt={project.imageAlt}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover"
+        />
+      )}
+    </div>
+  );
+}
+
+function FeaturedProject({ project, flip }) {
+  const { light, muted, faint } = useT();
+
+  return (
+    <GlassCard className="p-5 md:p-8">
+      <div className="grid items-center gap-8 lg:grid-cols-2">
+        <div className={cn(flip && "lg:order-2")}>
+          <ProjectVisual project={project} />
+        </div>
+
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <Badge tone={project.badge.tone}>{project.badge.label}</Badge>
+            {project.note && (
+              <span className={cn("text-sm", faint)}>{project.note}</span>
+            )}
+          </div>
+
+          <h3 className="text-2xl font-semibold tracking-tight md:text-3xl">
+            {project.title}
+          </h3>
+          <p className={cn("leading-8", muted)}>{project.summary}</p>
+
+          <ul className={cn("space-y-2.5 text-[15px] leading-7", muted)}>
+            {project.highlights.map((item) => (
+              <li key={item} className="flex gap-3">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "mt-3 h-1 w-1 shrink-0 rounded-full",
+                    light ? "bg-slate-500" : "bg-slate-400"
+                  )}
+                />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+
+          <TagList tags={project.tags} />
+
+          {project.links.length > 0 && (
+            <div className="flex flex-wrap gap-3">
+              {project.links.map((l) => (
+                <ExternalLink
+                  key={l.href}
+                  href={l.href}
+                  label={`${project.title}: ${l.label}`}
+                  variant={l.variant}
+                >
+                  {l.label}
+                </ExternalLink>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
+
+function MoreProjects() {
+  const { light, muted, faint, divide } = useT();
+
+  return (
+    <ul className={cn("divide-y", divide)}>
+      {MORE.map((p) => (
+        <li
+          key={p.title}
+          className="group grid gap-5 py-7 sm:grid-cols-[13rem_1fr] md:grid-cols-[15rem_1fr_auto] md:items-center md:gap-8"
+        >
+          <div
+            className={cn(
+              "h-36 overflow-hidden rounded-2xl border",
+              light ? "border-white/70" : "border-white/10"
+            )}
+          >
+            <img
+              src={p.image}
+              alt={`${p.title} preview`}
+              loading="lazy"
+              decoding="async"
+              className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            />
+          </div>
+
+          <div className="space-y-2.5">
+            <div className="flex flex-wrap items-center gap-3">
+              <h4 className="text-lg font-semibold">{p.title}</h4>
+              <Badge tone={p.badge.tone}>{p.badge.label}</Badge>
+            </div>
+            <p className={cn("max-w-xl text-[15px] leading-7", muted)}>
+              {p.summary}
+            </p>
+            <p className={cn("text-sm", faint)}>{p.tags.join(", ")}</p>
+          </div>
+
+          <div className="flex flex-wrap gap-3 sm:col-span-2 md:col-span-1 md:flex-col md:items-stretch">
+            <ExternalLink href={p.live} label={`${p.title}: live site`}>
+              Live site
+            </ExternalLink>
+            <ExternalLink
+              href={p.repo}
+              label={`${p.title}: source code on GitHub`}
+              variant="secondary"
+            >
+              Source
+            </ExternalLink>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function Projects() {
+  return (
+    <section id="projects" className="scroll-mt-28 px-4 md:px-8">
+      <div className="mx-auto max-w-6xl space-y-10">
+        <SectionHead
+          title="Things I’ve built"
+          blurb="Products and systems I’m working on now, followed by shipped sites and frontend builds you can open."
+        />
+
+        <div className="space-y-8">
+          {FEATURED.map((project, i) => (
+            <FeaturedProject key={project.id} project={project} flip={i % 2 === 1} />
+          ))}
+        </div>
+
+        <div className="space-y-2 pt-6">
+          <h3 className="text-2xl font-semibold tracking-tight">
+            More builds
+          </h3>
+          <MoreProjects />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Skills                                                                    */
+/* -------------------------------------------------------------------------- */
+
+function Skills() {
+  const { line } = useT();
+
+  return (
+    <section id="skills" className="scroll-mt-28 px-4 md:px-8">
+      <div className="mx-auto max-w-6xl space-y-10">
+        <SectionHead title="What I work with" />
+
+        <div className="grid gap-x-12 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
+          {SKILLS.map((group) => (
+            <div key={group.title} className={cn("border-t pt-5", line)}>
+              <h3 className="text-lg font-semibold">{group.title}</h3>
+              <div className="mt-4">
+                <TagList tags={group.items} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Contact                                                                   */
+/* -------------------------------------------------------------------------- */
+
+function ContactForm() {
+  const { light, muted } = useT();
+  const [status, setStatus] = useState("idle");
+
+  const field = cn(
+    "mt-2 w-full rounded-2xl border px-4 py-3 text-sm backdrop-blur-xl transition duration-300",
+    light
+      ? "border-white/70 bg-white/45 text-slate-900 placeholder:text-slate-500 focus:border-blue-400 focus:bg-white/70"
+      : "border-white/15 bg-white/[0.06] text-white placeholder:text-slate-400 focus:border-blue-400/60 focus:bg-white/10"
+  );
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    setStatus("sending");
+    try {
+      const res = await fetch(https://formspree.io/f/mdkaloln, {
+        method: "POST",
+        body: new FormData(form),
+        headers: { Accept: "application/json" },
+      });
+      if (res.ok) {
+        form.reset();
+        setStatus("sent");
+      } else {
+        setStatus("error");
+      }
+    } catch {
+      setStatus("error");
+    }
+  }
+
+  return (
+    <GlassCard className="p-6 md:p-8">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="name" className="text-sm font-medium">
+              Name
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              required
+              autoComplete="name"
+              placeholder="Your name"
+              className={field}
+            />
+          </div>
+          <div>
+            <label htmlFor="email" className="text-sm font-medium">
+              Email
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@company.com"
+              className={field}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label htmlFor="message" className="text-sm font-medium">
+            Message
+          </label>
+          <textarea
+            id="message"
+            name="message"
+            rows={6}
+            required
+            placeholder="What role or project did you have in mind?"
+            className={cn(field, "resize-none")}
+          />
+        </div>
+
+        <input
+          type="text"
+          name="_gotcha"
+          tabIndex={-1}
+          autoComplete="off"
+          className="hidden"
+        />
+
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            type="submit"
+            disabled={status === "sending"}
+            className={cn(btnPrimary(light), "disabled:opacity-60")}
+          >
+            {status === "sending" ? "Sending…" : "Send message"}
+          </button>
+          <p role="status" aria-live="polite" className={cn("text-sm", muted)}>
+            {status === "sent" &&
+              "Message sent. I’ll reply to the email you provided."}
+            {status === "error" &&
+              `That didn’t send. Try again, or email ${EMAIL} directly.`}
+          </p>
+        </div>
+      </form>
+    </GlassCard>
+  );
+}
+
+function Contact() {
+  const { light, faint, line, divide } = useT();
+
+  const details = [
+    ["Email", EMAIL, `mailto:${EMAIL}`],
+    ["GitHub", "github.com/Godwinash", GITHUB],
+    ["LinkedIn", "linkedin.com/in/godwin-ashiekaa", LINKEDIN],
+    ["Location", "Kano, Nigeria", null],
+  ];
+
+  return (
+    <section id="contact" className="scroll-mt-28 px-4 md:px-8">
+      <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.9fr_1.1fr]">
+        <div className="space-y-8">
+          <SectionHead
+            title="Get in touch"
+            blurb="Hiring, or have a project in mind? Send a message and I’ll get back to you."
+          />
+
+          <dl className={cn("divide-y border-y", line, divide)}>
+            {details.map(([label, text, href]) => (
+              <div
+                key={label}
+                className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-4"
+              >
+                <dt className={cn("text-sm", faint)}>{label}</dt>
+                <dd>
+                  {href ? (
+                    <a
+                      href={href}
+                      target={href.startsWith("http") ? "_blank" : undefined}
+                      rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                      className="underline-offset-4 hover:underline"
+                    >
+                      {text}
+                    </a>
+                  ) : (
+                    text
+                  )}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <a href="/documents/Godwin-Ashiekaa.pdf" download className={btnGhost(light)}>
+            <DownloadIcon />
+            Download résumé
+          </a>
+        </div>
+
+        <ContactForm />
+      </div>
+    </section>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Footer                                                                    */
+/* -------------------------------------------------------------------------- */
+
+function Footer() {
+  const { faint, line } = useT();
+  return (
+    <footer className="relative z-10 px-4 pb-28 pt-4 md:px-8 md:pb-12">
+      <div
+        className={cn(
+          "mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 border-t pt-6 text-sm",
+          line,
+          faint
+        )}
+      >
+        <p>© {new Date().getFullYear()} Godwin Ashiekaa</p>
+        <a href="#home" className="underline-offset-4 hover:underline">
+          Back to top
+        </a>
       </div>
     </footer>
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/*  App                                                                       */
+/* -------------------------------------------------------------------------- */
+
 export default function App() {
-  const [theme, setTheme] = useState(getThemeByHour(new Date().getHours()));
-  const [loading, setLoading] = useState(true);
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem("ga-theme");
+      if (saved === "light" || saved === "dark") return saved;
+    } catch {
+      /* storage unavailable, fall through */
+    }
+    return getThemeByHour(new Date().getHours());
+  });
   const [activeSection, setActiveSection] = useState("home");
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTheme(getThemeByHour(new Date().getHours()));
-    }, 60 * 1000);
-    return () => clearInterval(interval);
+  const tokens = useMemo(() => makeTokens(theme), [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === "light" ? "dark" : "light";
+      try {
+        localStorage.setItem("ga-theme", next);
+      } catch {
+        /* storage unavailable, theme still switches for this visit */
+      }
+      return next;
+    });
   }, []);
 
   useEffect(() => {
-    const sectionIds = ["home", "about", "projects", "skills", "contact"];
-    const sections = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter(Boolean);
+    document.documentElement.style.colorScheme = theme;
+  }, [theme]);
+
+  useEffect(() => {
+    const sections = NAV.map((item) => document.getElementById(item.id)).filter(
+      Boolean
+    );
 
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((entry) => entry.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-
-        if (visible.length > 0) {
-          setActiveSection(visible[0].target.id);
-        }
+        if (visible.length > 0) setActiveSection(visible[0].target.id);
       },
       {
         threshold: [0.2, 0.35, 0.5, 0.65],
@@ -586,1276 +1508,54 @@ export default function App() {
     );
 
     sections.forEach((section) => observer.observe(section));
-
-    return () => {
-      sections.forEach((section) => observer.unobserve(section));
-    };
-  }, [loading]);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div
-      className={cn(
-        "min-h-screen overflow-x-hidden font-[Outfit] transition-colors duration-1000",
-        theme === "light"
-          ? "bg-[#eef6ff] text-slate-900"
-          : "bg-[#07101f] text-white"
-      )}
-    >
+    <ThemeCtx.Provider value={tokens}>
+      <style>{GLOBAL_CSS}</style>
+
       <div
         className={cn(
-          "fixed inset-0 -z-20 transition-all duration-1000",
-          theme === "light"
-            ? "bg-[radial-gradient(circle_at_top_left,rgba(96,165,250,0.20),transparent_28%),radial-gradient(circle_at_82%_12%,rgba(168,85,247,0.10),transparent_18%),radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.7),transparent_35%),linear-gradient(180deg,#f7fbff_0%,#e8f3ff_44%,#edf6ff_100%)]"
-            : "bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.20),transparent_18%),radial-gradient(circle_at_80%_10%,rgba(168,85,247,0.14),transparent_20%),radial-gradient(circle_at_50%_100%,rgba(15,23,42,0.35),transparent_35%),linear-gradient(180deg,#040816_0%,#091529_45%,#0a1120_100%)]"
+          "isolate min-h-screen overflow-x-hidden transition-colors duration-700",
+          tokens.light ? "bg-[#eef6ff] text-slate-900" : "bg-[#07101f] text-white"
         )}
-      />
-
-      {!loading && (
-        <div className="fixed inset-0 -z-10 opacity-100">
-          <BubbleField theme={theme} />
-        </div>
-      )}
-
-      <AnimatePresence mode="wait">
-        {loading && (
-          <Loader
-            key="loader"
-            theme={theme}
-            onDone={() => setLoading(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {!loading && (
-        <>
-          <Navbar theme={theme} activeSection={activeSection} />
-
-          <main className="relative z-10 space-y-28 pb-24 md:space-y-32 md:pb-32">
-            <section
-              id="home"
-              className="flex min-h-screen items-center px-4 pb-20 pt-32 md:px-8"
-            >
-              <div className="mx-auto grid w-full max-w-6xl items-center gap-8 lg:grid-cols-2">
-                <motion.div
-                  initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{ duration: 0.9, ease: "easeOut" }}
-                  className="space-y-6"
-                >
-                  <GlassCard
-                    theme={theme}
-                    className="inline-flex rounded-full px-4 py-2"
-                  >
-                    <span className="text-sm text-blue-700 dark:text-blue-200">
-                      Glassmorphism portfolio concept
-                    </span>
-                  </GlassCard>
-
-                  <div className="space-y-5">
-                    <p
-                      className={cn(
-                        "text-sm uppercase tracking-[0.35em]",
-                        theme === "light"
-                          ? "text-slate-500"
-                          : "text-slate-300/70"
-                      )}
-                    >
-                      Hello, I’m Godwin
-                    </p>
-
-                    <h1 className="max-w-3xl text-5xl font-semibold leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
-                      Building fast, polished, and immersive web experiences.
-                    </h1>
-
-                    <p
-                      className={cn(
-                        "max-w-2xl text-base leading-8 sm:text-lg",
-                        theme === "light"
-                          ? "text-slate-600"
-                          : "text-slate-300/80"
-                      )}
-                    >
-                      A software developer portfolio featuring time-aware theming,
-                      bubbling liquid-glass motion, and smooth visuals inspired by
-                      premium mobile interfaces.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-4">
-                    <a
-                      href="#projects"
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition",
-                        theme === "light"
-                          ? "bg-gradient-to-r from-blue-500 to-sky-400 text-white shadow-[0_10px_30px_rgba(59,130,246,0.25)] hover:from-blue-500 hover:to-indigo-500"
-                          : "bg-gradient-to-r from-blue-500/30 to-purple-500/20 text-white hover:from-blue-500/40 hover:to-purple-500/30"
-                      )}
-                    >
-                      View Projects
-                    </a>
-
-                    <a
-                      href="#contact"
-                      className={cn(
-                        "inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-medium transition",
-                        theme === "light"
-                          ? "border border-blue-100/80 bg-white/25 text-slate-900 hover:bg-blue-50/70"
-                          : "border border-white/15 bg-white/5 text-white hover:bg-white/10"
-                      )}
-                    >
-                      Contact Me
-                    </a>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: 0.25, duration: 0.9, ease: "easeOut" }}
-                  className="relative mx-auto flex h-[460px] w-full max-w-[460px] items-center justify-center"
-                >
-                  <motion.div
-                    animate={{ y: [0, -12, 0], rotate: [0, 3, 0] }}
-                    transition={{
-                      duration: 8,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className={cn(
-                      "absolute h-72 w-72 rounded-full",
-                      theme === "light"
-                        ? "bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.94),rgba(255,255,255,0.3)_26%,rgba(96,165,250,0.24)_58%,rgba(168,85,247,0.12)_80%,rgba(255,255,255,0.08)_100%)]"
-                        : "bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.28),rgba(96,165,250,0.18)_30%,rgba(59,130,246,0.14)_62%,rgba(168,85,247,0.08)_88%,rgba(255,255,255,0.03)_100%)]"
-                    )}
-                    style={{
-                      border:
-                        theme === "light"
-                          ? "1px solid rgba(255,255,255,0.68)"
-                          : "1px solid rgba(255,255,255,0.14)",
-                      boxShadow:
-                        theme === "light"
-                          ? "inset 14px 14px 32px rgba(255,255,255,0.6), inset -14px -14px 32px rgba(255,255,255,0.16), 0 35px 80px rgba(59,130,246,0.18)"
-                          : "inset 10px 10px 22px rgba(255,255,255,0.08), inset -10px -10px 22px rgba(255,255,255,0.03), 0 35px 80px rgba(0,0,0,0.28)",
-                    }}
-                  >
-                    <div className="absolute left-[18%] top-[16%] h-14 w-14 rounded-full bg-white/45 blur-md" />
-                  </motion.div>
-
-                  <motion.div
-                    animate={{ y: [0, -10, 0], x: [0, 10, 0] }}
-                    transition={{
-                      duration: 7,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className={cn(
-                      "absolute left-6 top-16 h-32 w-32 rounded-full",
-                      theme === "light" ? "bg-blue-100/35" : "bg-blue-300/10"
-                    )}
-                    style={{
-                      border:
-                        theme === "light"
-                          ? "1px solid rgba(255,255,255,0.58)"
-                          : "1px solid rgba(255,255,255,0.12)",
-                      backdropFilter: "blur(24px)",
-                    }}
-                  />
-
-                  <motion.div
-                    animate={{ y: [0, 14, 0], x: [0, -10, 0] }}
-                    transition={{
-                      duration: 9,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className={cn(
-                      "absolute right-8 top-10 h-24 w-24 rounded-full",
-                      theme === "light"
-                        ? "bg-purple-100/40"
-                        : "bg-purple-300/10"
-                    )}
-                    style={{
-                      border:
-                        theme === "light"
-                          ? "1px solid rgba(255,255,255,0.55)"
-                          : "1px solid rgba(255,255,255,0.10)",
-                      backdropFilter: "blur(26px)",
-                    }}
-                  />
-
-                  <motion.div
-                    animate={{ y: [0, 10, 0], x: [0, -8, 0] }}
-                    transition={{
-                      duration: 10,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className={cn(
-                      "absolute bottom-8 right-10 h-20 w-20 rounded-full",
-                      theme === "light" ? "bg-sky-100/35" : "bg-cyan-100/10"
-                    )}
-                    style={{
-                      border:
-                        theme === "light"
-                          ? "1px solid rgba(255,255,255,0.5)"
-                          : "1px solid rgba(255,255,255,0.10)",
-                      backdropFilter: "blur(22px)",
-                    }}
-                  />
-
-                  <GlassCard
-                    theme={theme}
-                    className="relative z-10 w-full max-w-sm px-6 py-7"
-                  >
-                    <div className="space-y-4">
-                      <p
-                        className={cn(
-                          "text-xs uppercase tracking-[0.25em]",
-                          theme === "light"
-                            ? "text-slate-500"
-                            : "text-slate-400"
-                        )}
-                      >
-                        Now Building
-                      </p>
-                      <h3 className="text-2xl font-semibold">Liquid Glass UI</h3>
-                      <p
-                        className={cn(
-                          "text-sm leading-7",
-                          theme === "light"
-                            ? "text-slate-600"
-                            : "text-slate-300/80"
-                        )}
-                      >
-                        Auto-switching day and night theme, premium frosted surfaces,
-                        soda-like bubble bursts, and a clean project-first layout.
-                      </p>
-                    </div>
-                  </GlassCard>
-                </motion.div>
-              </div>
-            </section>
-
-            <section id="about" className="px-4 md:px-8">
-  <div className="mx-auto max-w-6xl">
-    <div className="mb-8 space-y-3">
-      <p className="text-xs uppercase tracking-[0.3em] opacity-70">
-        About Me
-      </p>
-      <h2 className="text-3xl font-semibold md:text-4xl">
-        Building systems that feel as good as they perform.
-      </h2>
-    </div>
-
-    <div className="grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
-      <SectionReveal>
-        <motion.div
-          whileHover={{ y: -4, scale: 1.01 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
-        >
-          <GlassCard theme={theme} className="h-[420px] p-5">
-            <div className="relative h-full overflow-hidden rounded-[1.65rem]">
-              <img
-                src="/images/aboutimage.png"
-                alt="About Godwin"
-                className="w-full h-full object-cover rounded-[1.65rem]"
-                loading="eager"
-                draggable="false"
-              />
-
-              <div className="absolute bottom-5 left-5 right-5 z-20">
-                <div
-                  className={cn(
-                    "rounded-[1.4rem] px-5 py-5 backdrop-blur-xl border shadow-lg",
-                    theme === "light"
-                      ? "bg-white/60 text-slate-900 border-white/30"
-                      : "bg-white/25 text-white border-white/20"
-                  )}
-                >
-                  <p className="text-xs uppercase tracking-[0.25em] font-medium">
-                    Identity
-                  </p>
-                  <p className="mt-3 text-base leading-7 font-medium">
-                    Clean systems, smooth interaction, and refined visual structure.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </SectionReveal>
-
-      <SectionReveal>
-        <motion.div
-          whileHover={{ y: -4, scale: 1.005 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
-        >
-          <GlassCard theme={theme} className="h-full p-8 md:p-10">
-            <div className="space-y-8">
-              <div className="space-y-5">
-                <p className="text-xs uppercase tracking-[0.28em] opacity-65">
-                  Software Developer
-                </p>
-
-                <h3 className="max-w-2xl text-2xl font-semibold leading-tight md:text-3xl">
-                  I build systems that are modern, scalable, and visually refined.
-                </h3>
-
-                <p className="max-w-2xl leading-8 opacity-80">
-                  I’m a software developer focused on building modern, responsive,
-                  and well-structured web applications. I work across both frontend
-                  and backend, creating systems that are functional, scalable, and
-                  intuitive. My approach combines clean architecture, smooth interaction,
-                  and a strong design sense to deliver products that feel as good as
-                  they perform.
-                </p>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[
-                  ["Approach", "Clean architecture, smooth interaction, and readable structure"],
-                  ["Focus", "Full-stack development, responsive systems, and polished UX"],
-                  ["Style", "Minimal design with premium visual behavior"],
-                  ["Goal", "Build scalable products that feel modern and intuitive"],
-                ].map(([title, text]) => (
-                  <motion.div
-                    key={title}
-                    whileHover={{ y: -3, scale: 1.01 }}
-                    transition={{ duration: 0.3, ease: sectionEase }}
-                    className={cn(
-                      "rounded-[1.5rem] p-4",
-                      theme === "light" ? "bg-white/30" : "bg-white/6"
-                    )}
-                  >
-                    <p className="text-[10px] uppercase tracking-[0.22em] opacity-65">
-                      {title}
-                    </p>
-                    <p className="mt-3 text-sm leading-7 opacity-85">
-                      {text}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </SectionReveal>
-    </div>
-  </div>
-</section>
-
-            <section id="projects" className="px-4 md:px-8">
-  <div className="mx-auto max-w-6xl space-y-10">
-    <SectionReveal>
-      <div className="space-y-3">
-        <p className="text-xs uppercase tracking-[0.3em] opacity-70">
-          Projects
-        </p>
-        <h2 className="text-3xl font-semibold tracking-tight md:text-4xl">
-          Selected Work
-        </h2>
-      </div>
-    </SectionReveal>
-
-    <SectionReveal>
-      <motion.div
-        whileHover={{ y: -6, scale: 1.01 }}
-        transition={{ duration: 0.35, ease: sectionEase }}
+        style={{ fontFamily: FONT_STACK }}
       >
-        <GlassCard theme={theme} className="p-8 md:p-10">
-          <div className="grid items-center gap-8 lg:grid-cols-2">
-            <div
-              className={cn(
-                "relative h-64 overflow-hidden rounded-[1.8rem] border",
-                theme === "light"
-                  ? "border-white/65 bg-white/28"
-                  : "border-white/10 bg-white/6"
-              )}
-            >
-              <img
-                src="/images/agencyflow.png"
-                alt="AgencyFlow CRM preview"
-                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-              />
-
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  theme === "light" ? "bg-white/18" : "bg-black/18"
-                )}
-              />
-
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 via-transparent to-purple-500/16" />
-
-              <motion.div
-                className={cn(
-                  "absolute left-8 top-8 h-28 w-28 rounded-full",
-                  theme === "light" ? "bg-blue-100/22" : "bg-blue-300/10"
-                )}
-                animate={{ y: [0, -6, 0], x: [0, 6, 0] }}
-                transition={{
-                  duration: 7,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                style={{
-                  border:
-                    theme === "light"
-                      ? "1px solid rgba(255,255,255,0.42)"
-                      : "1px solid rgba(255,255,255,0.12)",
-                  backdropFilter: "blur(16px)",
-                }}
-              />
-
-              <motion.div
-                className={cn(
-                  "absolute bottom-8 right-8 h-20 w-36 rounded-full",
-                  theme === "light" ? "bg-purple-100/22" : "bg-purple-300/10"
-                )}
-                animate={{ x: [0, -6, 0] }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                style={{
-                  border:
-                    theme === "light"
-                      ? "1px solid rgba(255,255,255,0.38)"
-                      : "1px solid rgba(255,255,255,0.1)",
-                  backdropFilter: "blur(18px)",
-                }}
-              />
-
-              <div className="absolute bottom-5 left-5 right-5">
-                <div
-                  className={cn(
-                    "rounded-[1.2rem] px-4 py-3 text-sm uppercase tracking-[0.2em] backdrop-blur-xl",
-                    theme === "light"
-                      ? "bg-white/48 text-slate-700"
-                      : "bg-white/10 text-slate-200"
-                  )}
-                >
-                  AgencyFlow CRM
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-5">
-              <div className="flex flex-wrap items-center gap-3">
-                <p className="text-xs uppercase tracking-[0.25em] opacity-70">
-                  Featured Project
-                </p>
-                <span
-                  className={cn(
-                    "rounded-full px-3 py-1 text-[11px] uppercase tracking-[0.18em]",
-                    theme === "light"
-                      ? "bg-blue-100/80 text-blue-700"
-                      : "bg-blue-500/15 text-blue-200"
-                  )}
-                >
-                  In Progress
-                </span>
-              </div>
-
-              <h3 className="text-2xl font-semibold md:text-3xl">
-                AgencyFlow CRM
-              </h3>
-
-              <p className="leading-8 opacity-80">
-                A client and workflow management system designed to organize tasks,
-                track business income, and monitor client engagement—built to
-                improve structure, visibility, and overall productivity.
-              </p>
-
-              <div className="text-sm opacity-60">
-                React • TailwindCSS • Node.js • JWT Authentication • MongoDB • Vite
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-2">
-                <span
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700"
-                      : "bg-white/8 text-slate-300"
-                  )}
-                >
-                  Private Build
-                </span>
-
-                <span
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium",
-                    theme === "light"
-                      ? "bg-blue-500 text-white"
-                      : "bg-blue-500/20 text-blue-100"
-                  )}
-                >
-                  Not Yet Published
-                </span>
-              </div>
-            </div>
-          </div>
-        </GlassCard>
-      </motion.div>
-    </SectionReveal>
-
-    <StaggerGroup className="grid gap-6 md:grid-cols-2">
-      <StaggerItem>
-        <motion.div
-          whileHover={{ y: -6, scale: 1.012 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-blue-600 focus:px-4 focus:py-2 focus:text-sm focus:text-white"
         >
-          <GlassCard theme={theme} className="group p-6">
-            <div className="space-y-5">
-              <div
-                className={cn(
-                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
-                  theme === "light"
-                    ? "border-white/65 bg-white/28"
-                    : "border-white/10 bg-white/6"
-                )}
-              >
-                <img
-                  src="/images/checkit.png"
-                  alt="Checkit Product Explorer preview"
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
+          Skip to content
+        </a>
 
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    theme === "light" ? "bg-white/16" : "bg-black/20"
-                  )}
-                />
+        <div
+          aria-hidden="true"
+          className={cn(
+            "fixed inset-0 -z-20 transition-opacity duration-700",
+            tokens.light
+              ? "bg-[radial-gradient(circle_at_top_left,rgba(96,165,250,0.20),transparent_28%),radial-gradient(circle_at_82%_12%,rgba(168,85,247,0.10),transparent_18%),radial-gradient(circle_at_50%_100%,rgba(255,255,255,0.7),transparent_35%),linear-gradient(180deg,#f7fbff_0%,#e8f3ff_44%,#edf6ff_100%)]"
+              : "bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.20),transparent_18%),radial-gradient(circle_at_80%_10%,rgba(168,85,247,0.14),transparent_20%),radial-gradient(circle_at_50%_100%,rgba(15,23,42,0.35),transparent_35%),linear-gradient(180deg,#040816_0%,#091529_45%,#0a1120_100%)]"
+          )}
+        />
 
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
+        <BubbleField />
+        <Navbar activeSection={activeSection} onToggleTheme={toggleTheme} />
 
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div
-                    className={cn(
-                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
-                      theme === "light"
-                        ? "bg-white/48 text-slate-600"
-                        : "bg-white/10 text-slate-200"
-                    )}
-                  >
-                    Checkit Product Explorer
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
-                  Checkit Product Explorer
-                </h3>
-                <p className="text-sm leading-7 opacity-75">
-                  A product exploration interface built as a frontend assessment
-                  for a mid-level frontend engineer role, focused on clean data
-                  presentation, responsive layout, and a polished user experience.
-                </p>
-                <div className="text-sm opacity-60">
-                  Next.js • TypeScript • TailwindCSS • Vercel
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-1">
-                <a
-                  href="https://frontend-assessment-godwin.vercel.app"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
-                  )}
-                >
-                  Live
-                </a>
-                <a
-                  href="https://github.com/Godwinash/frontend-assessment-godwin"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
-                      : "bg-white/8 text-slate-200 hover:bg-white/12"
-                  )}
-                >
-                  GitHub
-                </a>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </StaggerItem>
-
-      <StaggerItem>
-        <motion.div
-          whileHover={{ y: -6, scale: 1.012 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
+        <main
+          id="main"
+          className="relative z-10 space-y-28 pb-24 md:space-y-36 md:pb-32"
         >
-          <GlassCard theme={theme} className="group p-6">
-            <div className="space-y-5">
-              <div
-                className={cn(
-                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
-                  theme === "light"
-                    ? "border-white/65 bg-white/28"
-                    : "border-white/10 bg-white/6"
-                )}
-              >
-                <img
-                  src="/images/travel-agency.png"
-                  alt="Travel Agency Demo preview"
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
+          <Hero />
+          <About />
+          <Experience />
+          <Projects />
+          <Skills />
+          <Contact />
+        </main>
 
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    theme === "light" ? "bg-white/16" : "bg-black/20"
-                  )}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
-
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div
-                    className={cn(
-                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
-                      theme === "light"
-                        ? "bg-white/48 text-slate-600"
-                        : "bg-white/10 text-slate-200"
-                    )}
-                  >
-                    Travel Agency Demo
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
-                  Travel Agency Demo
-                </h3>
-                <p className="text-sm leading-7 opacity-75">
-                  Modern landing page for a travel agency featuring curated cities,
-                  a clean hero layout, and responsive design for better user
-                  experience.
-                </p>
-                <div className="text-sm opacity-60">
-                  HTML • CSS • JavaScript
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-1">
-                <a
-                  href="https://godwinash.github.io/travel_agency_demo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
-                  )}
-                >
-                  Live
-                </a>
-                <a
-                  href="https://github.com/Godwinash/travel-agency-demo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
-                      : "bg-white/8 text-slate-200 hover:bg-white/12"
-                  )}
-                >
-                  GitHub
-                </a>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </StaggerItem>
-
-      <StaggerItem>
-        <motion.div
-          whileHover={{ y: -6, scale: 1.012 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
-        >
-          <GlassCard theme={theme} className="group p-6">
-            <div className="space-y-5">
-              <div
-                className={cn(
-                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
-                  theme === "light"
-                    ? "border-white/65 bg-white/28"
-                    : "border-white/10 bg-white/6"
-                )}
-              >
-                <img
-                  src="/images/yum-redesign.png"
-                  alt="Yum Brand Redesign preview"
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    theme === "light" ? "bg-white/16" : "bg-black/20"
-                  )}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
-
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div
-                    className={cn(
-                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
-                      theme === "light"
-                        ? "bg-white/48 text-slate-600"
-                        : "bg-white/10 text-slate-200"
-                    )}
-                  >
-                    Yum Brand Redesign
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
-                  Yum Brand Redesign
-                </h3>
-                <p className="text-sm leading-7 opacity-75">
-                  UI redesign for a fast food brand focused on modern layouts,
-                  improved readability, and a cleaner user interface.
-                </p>
-                <div className="text-sm opacity-60">
-                  HTML • TailwindCSS • JavaScript
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-1">
-                <a
-                  href="https://godwinash.github.io/yum-demo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
-                  )}
-                >
-                  Live
-                </a>
-                <a
-                  href="https://github.com/Godwinash/yum-demo"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
-                      : "bg-white/8 text-slate-200 hover:bg-white/12"
-                  )}
-                >
-                  GitHub
-                </a>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </StaggerItem>
-
-      <StaggerItem>
-        <motion.div
-          whileHover={{ y: -6, scale: 1.012 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
-        >
-          <GlassCard theme={theme} className="group p-6">
-            <div className="space-y-5">
-              <div
-                className={cn(
-                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
-                  theme === "light"
-                    ? "border-white/65 bg-white/28"
-                    : "border-white/10 bg-white/6"
-                )}
-              >
-                <img
-                  src="/images/cilantro-kano.png"
-                  alt="Cilantro Kano Restaurant preview"
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    theme === "light" ? "bg-white/16" : "bg-black/20"
-                  )}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
-
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div
-                    className={cn(
-                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
-                      theme === "light"
-                        ? "bg-white/48 text-slate-600"
-                        : "bg-white/10 text-slate-200"
-                    )}
-                  >
-                    Cilantro Kano Restaurant
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
-                  Cilantro Kano Restaurant
-                </h3>
-                <p className="text-sm leading-7 opacity-75">
-                  A modern, visually-driven restaurant website.
-                  It serves as a digital storefront to showcase the establishment's brand, atmosphere,
-                  and likely its menu or contact information.
-                </p>
-                <div className="text-sm opacity-60">
-                  React • TailwindCSS • Vite • JavaScript( with ESLint) • Vercel 
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-1">
-                <a
-                  href="https://cilantro-kano.vercel.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
-                  )}
-                >
-                  Live
-                </a>
-                <a
-                  href="https://github.com/Godwinash/cilantro-kano"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
-                      : "bg-white/8 text-slate-200 hover:bg-white/12"
-                  )}
-                >
-                  GitHub
-                </a>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </StaggerItem>
-      
-      <StaggerItem>
-        <motion.div
-          whileHover={{ y: -6, scale: 1.012 }}
-          transition={{ duration: 0.35, ease: sectionEase }}
-        >
-          <GlassCard theme={theme} className="group p-6">
-            <div className="space-y-5">
-              <div
-                className={cn(
-                  "relative h-44 overflow-hidden rounded-[1.5rem] border",
-                  theme === "light"
-                    ? "border-white/65 bg-white/28"
-                    : "border-white/10 bg-white/6"
-                )}
-              >
-                <img
-                  src="/images/lamisking.png"
-                  alt="Lamisking Pixiesalon and Spa preview"
-                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                />
-
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    theme === "light" ? "bg-white/16" : "bg-black/20"
-                  )}
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/18 via-transparent to-purple-500/14" />
-
-                <div className="absolute bottom-4 left-4 right-4">
-                  <div
-                    className={cn(
-                      "rounded-[1.1rem] px-3 py-2 text-[11px] uppercase tracking-[0.2em] backdrop-blur-xl",
-                      theme === "light"
-                        ? "bg-white/48 text-slate-600"
-                        : "bg-white/10 text-slate-200"
-                    )}
-                  >
-                    Lamisking Pixiesalon and Spa
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <h3 className="text-xl font-semibold">
-                  Lamisking Pixiesalon and Spa
-                </h3>
-                <p className="text-sm leading-7 opacity-75">
-                  Lamisking Pixiesalon and Spa opened in Wuse with a narrow focus:
-                  get one thing, the pixie cut, right more consistently than anyone else in Abuja.
-                  Everything else on the menu — braids, frontal installs, spa touches — grew out of
-                  clients asking for more of the same care applied elsewhere on their head.
-                </p>
-                <div className="text-sm opacity-60">
-                  NextJs • TailwindCSS • Typescript • Vercel  
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-3 pt-1">
-                <a
-                  href="https://lamisking-pixiesalon.vercel.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-blue-500 text-white hover:bg-blue-600"
-                      : "bg-blue-500/20 text-blue-100 hover:bg-blue-500/30"
-                  )}
-                >
-                  Live
-                </a>
-                <a
-                  href="https://github.com/Godwinash/lamisking-pixiesalon"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={cn(
-                    "inline-flex rounded-full px-4 py-2 text-sm font-medium transition",
-                    theme === "light"
-                      ? "bg-white/45 text-slate-700 hover:bg-white/70"
-                      : "bg-white/8 text-slate-200 hover:bg-white/12"
-                  )}
-                >
-                  GitHub
-                </a>
-              </div>
-            </div>
-          </GlassCard>
-        </motion.div>
-      </StaggerItem>
-    </StaggerGroup>
-  </div>
-</section>
-
-            <section id="skills" className="px-4 md:px-8">
-              <div className="mx-auto max-w-6xl space-y-10">
-                <SectionReveal>
-                  <div className="space-y-3">
-                    <p className="text-xs uppercase tracking-[0.3em] opacity-70">
-                      Skills
-                    </p>
-                    <h2 className="text-3xl font-semibold md:text-4xl">
-                      Tech Stack
-                    </h2>
-                  </div>
-                </SectionReveal>
-
-                <StaggerGroup className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {[
-                    {
-                      title: "Frontend",
-                      skills: [
-                        { name: "React", level: 85 },
-                        { name: "Next.js", level: 84 },
-                        { name: "JavaScript", level: 88 },
-                        { name: "TailwindCSS", level: 90 },
-                        { name: "HTML", level: 95 },
-                        { name: "CSS", level: 92 },
-                      ],
-                    },
-                    {
-                      title: "Backend",
-                      skills: [
-                        { name: "Node.js", level: 80 },
-                        { name: "Python", level: 85 },
-                        { name: "Java", level: 81 },
-                        { name: "Express.js", level: 78 },
-                        { name: "MongoDB", level: 75 },
-                        { name: "JWT Auth", level: 82 },
-                      ],
-                    },
-                    {
-                      title: "Tools",
-                      skills: [
-                        { name: "Git", level: 85 },
-                        { name: "GitHub", level: 88 },
-                        { name: "Figma", level: 82 },
-                        { name: "Vercel", level: 89 },
-                        { name: "Vite", level: 86 },
-                        { name: "VS Code", level: 90 },
-                      ],
-                    },
-                  ].map((category) => (
-                    <StaggerItem key={category.title}>
-                      <GlassCard theme={theme} className="space-y-6 p-6 md:p-7">
-                        <p className="text-xs uppercase tracking-[0.25em] opacity-60">
-                          {category.title}
-                        </p>
-
-                        <div className="space-y-5">
-                          {category.skills.map((skill) => (
-                            <div key={skill.name} className="space-y-2">
-                              <div className="flex items-center justify-between text-sm">
-                                <p className="opacity-85">{skill.name}</p>
-                                <p className="opacity-60">{skill.level}%</p>
-                              </div>
-
-                              <div
-                                className={cn(
-                                  "relative h-2 w-full overflow-hidden rounded-full",
-                                  theme === "light"
-                                    ? "bg-white/40"
-                                    : "bg-white/10"
-                                )}
-                              >
-                                <motion.div
-                                  initial={{ width: 0 }}
-                                  whileInView={{ width: `${skill.level}%` }}
-                                  viewport={{ once: false, amount: 0.6 }}
-                                  transition={{
-                                    duration: 1.2,
-                                    ease: sectionEase,
-                                  }}
-                                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-400"
-                                />
-
-                                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-400/10 blur-md" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </GlassCard>
-                    </StaggerItem>
-                  ))}
-                </StaggerGroup>
-              </div>
-            </section>
-
-            <section id="contact" className="px-4 md:px-8">
-              <div className="mx-auto max-w-5xl">
-                <SectionReveal>
-                  <div className="space-y-3 text-center">
-                    <p className="text-xs uppercase tracking-[0.3em] opacity-70">
-                      Contact
-                    </p>
-                    <h2 className="text-3xl font-semibold md:text-4xl">
-                      Let’s build something great
-                    </h2>
-                    <p className="mx-auto max-w-2xl leading-8 opacity-72">
-                      Got a project, idea, or opportunity? Send a message and let’s create
-                      something clean, modern, and impactful.
-                    </p>
-                  </div>
-                </SectionReveal>
-
-                <div className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                  <SectionReveal>
-                    <GlassCard theme={theme} className="p-6 md:p-8">
-                      <form
-                        action="https://formspree.io/f/mdkaloln"
-                        method="POST"
-                        className="space-y-5"
-                      >
-                        <div className="grid gap-5 sm:grid-cols-2">
-                          <div className="space-y-2">
-                            <label
-                              htmlFor="name"
-                              className="text-xs uppercase tracking-[0.22em] opacity-65"
-                            >
-                              Name
-                            </label>
-                            <input
-                              id="name"
-                              name="name"
-                              type="text"
-                              required
-                              placeholder="Your name"
-                              className={cn(
-                                "w-full rounded-[1.3rem] border px-4 py-3 text-sm outline-none backdrop-blur-xl transition duration-300",
-                                theme === "light"
-                                  ? "border-white/65 bg-white/35 text-slate-800 placeholder:text-slate-500 focus:border-blue-300 focus:bg-white/50 focus:shadow-[0_0_0_4px_rgba(96,165,250,0.10)]"
-                                  : "border-white/12 bg-white/6 text-white placeholder:text-slate-400 focus:border-blue-400/40 focus:bg-white/8 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.10)]"
-                              )}
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <label
-                              htmlFor="email"
-                              className="text-xs uppercase tracking-[0.22em] opacity-65"
-                            >
-                              Email
-                            </label>
-                            <input
-                              id="email"
-                              name="email"
-                              type="email"
-                              required
-                              placeholder="you@example.com"
-                              className={cn(
-                                "w-full rounded-[1.3rem] border px-4 py-3 text-sm outline-none backdrop-blur-xl transition duration-300",
-                                theme === "light"
-                                  ? "border-white/65 bg-white/35 text-slate-800 placeholder:text-slate-500 focus:border-blue-300 focus:bg-white/50 focus:shadow-[0_0_0_4px_rgba(96,165,250,0.10)]"
-                                  : "border-white/12 bg-white/6 text-white placeholder:text-slate-400 focus:border-blue-400/40 focus:bg-white/8 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.10)]"
-                              )}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label
-                            htmlFor="message"
-                            className="text-xs uppercase tracking-[0.22em] opacity-65"
-                          >
-                            Message
-                          </label>
-                          <textarea
-                            id="message"
-                            name="message"
-                            rows="6"
-                            required
-                            placeholder="Tell me a bit about your project or idea..."
-                            className={cn(
-                              "w-full resize-none rounded-[1.5rem] border px-4 py-4 text-sm outline-none backdrop-blur-xl transition duration-300",
-                              theme === "light"
-                                ? "border-white/65 bg-white/35 text-slate-800 placeholder:text-slate-500 focus:border-blue-300 focus:bg-white/50 focus:shadow-[0_0_0_4px_rgba(96,165,250,0.10)]"
-                                : "border-white/12 bg-white/6 text-white placeholder:text-slate-400 focus:border-blue-400/40 focus:bg-white/8 focus:shadow-[0_0_0_4px_rgba(59,130,246,0.10)]"
-                            )}
-                          />
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-3 pt-2">
-                          <motion.button
-                            type="submit"
-                            whileHover={{ y: -3, scale: 1.015 }}
-                            whileTap={{ scale: 0.985 }}
-                            transition={{ duration: 0.28, ease: sectionEase }}
-                            className={cn(
-                              "rounded-full px-6 py-3 text-sm font-medium transition",
-                              theme === "light"
-                                ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-[0_10px_30px_rgba(59,130,246,0.22)]"
-                                : "bg-gradient-to-r from-blue-500/30 to-purple-500/20 text-white"
-                            )}
-                          >
-                            Send Message
-                          </motion.button>
-
-                          <a
-                            href="mailto:ashiekagodwin1@gmail.com"
-                            className={cn(
-                              "rounded-full px-5 py-3 text-sm font-medium transition",
-                              theme === "light"
-                                ? "bg-white/50 text-slate-800 hover:bg-white/70"
-                                : "bg-white/8 text-white hover:bg-white/12"
-                            )}
-                          >
-                            Email Instead
-                          </a>
-                        </div>
-                      </form>
-                    </GlassCard>
-                  </SectionReveal>
-
-                  <SectionReveal>
-                    <GlassCard theme={theme} className="h-full p-6 md:p-8">
-                      <div className="space-y-6">
-                        <div className="space-y-3">
-                          <p className="text-xs uppercase tracking-[0.25em] opacity-65">
-                            Reach Out
-                          </p>
-                          <h3 className="text-2xl font-semibold">
-                            Open to projects and opportunities
-                          </h3>
-                          <p className="leading-8 opacity-75">
-                            Whether it’s a landing page, dashboard, full web application, or
-                            redesign, I’m open to building products that are functional,
-                            modern, and thoughtfully crafted.
-                          </p>
-                        </div>
-
-                        <div className="grid gap-4">
-                          {[
-                            ["Email", "ashiekaagodwin1@gmail.com", "mailto:ashiekaagodwin1@gmail.com"],
-                            ["GitHub", "github.com/Godwinash", "https://github.com/Godwinash"],
-                            ["Location", "Nigeria", null],
-                          ].map(([title, text, link]) => (
-                            <motion.div
-                              key={title}
-                              whileHover={{ y: -3, scale: 1.01 }}
-                              transition={{ duration: 0.28, ease: sectionEase }}
-                              className={cn(
-                                "rounded-[1.4rem] p-4",
-                                theme === "light" ? "bg-white/30" : "bg-white/6"
-                              )}
-                            >
-                              <p className="text-[10px] uppercase tracking-[0.22em] opacity-65">
-                                {title}
-                              </p>
-                              {link ? (
-                                <a
-                                  href={link}
-                                  target={link.startsWith("http") ? "_blank" : undefined}
-                                  rel={link.startsWith("http") ? "noopener noreferrer" : undefined}
-                                  className="mt-2 block text-sm leading-7 opacity-85 hover:opacity-100 hover:underline"
-                                >
-                                  {text}
-                                </a>
-                              ) : (
-                                <p className="mt-2 text-sm leading-7 opacity-85">{text}</p>
-                              )}
-                            </motion.div>
-                          ))}
-                        </div>
-
-                        <motion.a
-                          href="/documents/Godwin-Ashiekaa.pdf"
-                          download
-                          whileHover={{ y: -3, scale: 1.015 }}
-                          whileTap={{ scale: 0.985 }}
-                          transition={{ duration: 0.28, ease: sectionEase }}
-                          className={cn(
-                            "inline-flex w-full items-center justify-center rounded-[1.4rem] px-5 py-4 text-sm font-medium transition",
-                            theme === "light"
-                              ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-[0_10px_30px_rgba(59,130,246,0.18)]"
-                              : "bg-gradient-to-r from-blue-500/30 to-purple-500/20 text-white"
-                          )}
-                        >
-                          Download Portfolio PDF
-                        </motion.a>
-                      </div>
-                    </GlassCard>
-                  </SectionReveal>
-                </div>
-              </div>
-            </section>
-          </main>
-
-          <Footer theme={theme} />
-        </>
-      )}
-    </div>
+        <Footer />
+      </div>
+    </ThemeCtx.Provider>
   );
 }
