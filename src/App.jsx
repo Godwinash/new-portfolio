@@ -18,7 +18,7 @@ const FONT_STACK =
 
 const RESUME_HREF = "/documents/Godwin-Ashiekaa.pdf";
 const FORMSPREE_URL = "https://formspree.io/f/mdkaloln";
-const EMAIL = "ashiekagodwin1@gmail.com";
+const EMAIL = "ashiekaagodwin1@gmail.com";
 const GITHUB = "https://github.com/Godwinash";
 const LINKEDIN = "https://www.linkedin.com/in/godwin-ashiekaa-2a7aa9411";
 
@@ -160,7 +160,7 @@ const MORE = [
       "Landing page for a travel agency with curated city highlights, a clean hero, and a fully responsive layout.",
     tags: ["HTML", "CSS", "JavaScript"],
     live: "https://godwinash.github.io/travel_agency_demo",
-    repo: "https://github.com/Godwinash/travel-agency-demo",
+    repo: "https://github.com/Godwinash/travel_agency_demo",
   },
   {
     title: "Yum Brand Redesign",
